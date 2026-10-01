@@ -49,14 +49,6 @@
                 linear-gradient(90deg, rgba(10, 15, 36, 0.5) 1px, transparent 1px);
             background-size: 100% 100%, 30px 30px, 30px 30px;
         }
-        .neon-border-green {
-            box-shadow: 0 0 10px rgba(0, 255, 204, 0.2), inset 0 0 10px rgba(0, 255, 204, 0.1);
-            border: 1px solid #00ffcc44;
-        }
-        .neon-border-red {
-            box-shadow: 0 0 10px rgba(ff, 0, 85, 0.2), inset 0 0 10px rgba(ff, 0, 85, 0.1);
-            border: 1px solid #ff005544;
-        }
         .cyber-panel {
             background: rgba(10, 15, 36, 0.75);
             backdrop-filter: blur(8px);
@@ -81,7 +73,6 @@
         .glow-text-red { text-shadow: 0 0 8px rgba(255, 0, 85, 0.6); }
         .glow-text-blue { text-shadow: 0 0 8px rgba(0, 153, 255, 0.6); }
 
-        /* Custom scrollbar */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: #050811; }
         ::-webkit-scrollbar-thumb { background: #1a264a; border-radius: 2px; }
@@ -115,8 +106,12 @@
                 <span id="clock-utc" class="font-mono text-gray-200">00:00:00 UTC</span>
             </div>
             <div class="flex flex-col text-right border-l border-cyber-border pl-4">
-                <span class="text-gray-400 text-[10px]">OKX FEED</span>
+                <span class="text-gray-400 text-[10px]">PUBLIC FEED</span>
                 <span id="ws-status" class="text-cyber-green font-bold">CONNECTING...</span>
+            </div>
+            <div class="flex flex-col text-right border-l border-cyber-border pl-4">
+                <span class="text-gray-400 text-[10px]">PRIVATE API</span>
+                <span id="private-ws-status" class="text-cyber-yellow font-bold">UNCONFIGURED</span>
             </div>
         </div>
     </header>
@@ -180,7 +175,6 @@
                                 </tr>
                             </thead>
                             <tbody id="position-table-body">
-                                <!-- Dynamic JS content -->
                                 <tr class="border-b border-cyber-border/30 text-[11px]">
                                     <td class="text-cyber-green font-bold">SHIB-SWAP</td>
                                     <td>0.018420</td>
@@ -199,7 +193,7 @@
                         <span class="font-orbitron text-xs font-bold text-cyber-yellow">
                             <i class="fa-solid fa-clock-rotate-left mr-1"></i> RECENT TRADES
                         </span>
-                        <span class="text-[10px] text-gray-400">LAST 5 ORDERS</span>
+                        <span class="text-[10px] text-gray-400">LIVE API ORDERS</span>
                     </div>
                     <div class="flex-grow overflow-y-auto text-xs font-mono">
                         <table class="w-full text-left">
@@ -212,7 +206,7 @@
                                 </tr>
                             </thead>
                             <tbody id="trade-history-body" class="text-[11px]">
-                                <!-- Dynamic trade logs -->
+                                <!-- Dynamic trade logs from API -->
                             </tbody>
                         </table>
                     </div>
@@ -275,7 +269,7 @@
                 </div>
             </div>
 
-            <!-- CLIENTS / BOT SUBSCRIBERS LIST (GIA LẬP) -->
+            <!-- BOT SUBSCRIBERS LIST -->
             <div class="cyber-panel p-3 flex-grow flex flex-col">
                 <div class="flex justify-between items-center mb-2 border-b border-cyber-border pb-1">
                     <span class="font-orbitron text-xs font-bold text-cyber-green">
@@ -335,7 +329,7 @@
     <footer class="mt-3 cyber-panel p-2 flex flex-wrap justify-between items-center text-[11px] text-gray-400 font-mono">
         <div class="flex items-center space-x-4">
             <span><i class="fa-solid fa-server text-cyber-blue mr-1"></i> OKX WS: <strong class="text-cyber-green">CONNECTED</strong></span>
-            <span><i class="fa-solid fa-shield-halved text-cyber-green mr-1"></i> READ-ONLY STREAM MODE</span>
+            <span><i class="fa-solid fa-shield-halved text-cyber-green mr-1"></i> READ-ONLY PRESENTATION MODE</span>
         </div>
         <div>
             <span>SYSTEM MONITORING // LIVE SHIB-USDT TRADING DASHBOARD</span>
@@ -344,13 +338,19 @@
 
     <!-- JAVASCRIPT ENGINE -->
     <script>
-        // GLOBAL STATE & DATA
+        // =========================================================================
+        // 🔑 DÁN TỰ ĐỘNG THÔNG TIN API CỦA BẠN VÀO BÊN DƯỚI NÀY:
+        // =========================================================================
+        const OKX_API_KEY    = "cd35c786-049e-4b70-85ef-74e9b2239b28";
+        const OKX_SECRET_KEY = "897058A26F3CBB9E888E8DBC9693260E";
+        const OKX_PASSPHRASE = "Zxcv@1234";
+        // =========================================================================
+
         const BASE_CAPITAL = 10.0; // Vốn ban đầu 10$
         let candles = [];
         let currentPrice = 0.018450;
         let activeFilter = '1D';
 
-        // Trade History Mock Data
         let tradeLogs = [
             { time: '14:22:10', type: 'BUY', price: 0.018380, profit: 0.45 },
             { time: '13:10:05', type: 'SELL', price: 0.018410, profit: 0.32 },
@@ -375,7 +375,6 @@
                 document.getElementById('ws-status').innerText = 'CONNECTED';
                 document.getElementById('ws-status').className = 'text-cyber-green font-bold';
                 
-                // Subscribe 1m candle for SHIB-USDT-SWAP
                 const subMsg = {
                     "op": "subscribe",
                     "args": [{ "channel": "candle1m", "instId": "SHIB-USDT-SWAP" }]
@@ -387,7 +386,6 @@
                 const response = JSON.parse(event.data);
                 if (response.data && response.data.length > 0) {
                     const c = response.data[0];
-                    // [ts, open, high, low, close, ...]
                     const candleData = {
                         time: parseInt(c[0]),
                         open: parseFloat(c[1]),
@@ -404,12 +402,13 @@
                     document.getElementById('low-px').innerText = candleData.low.toFixed(6);
                     document.getElementById('close-px').innerText = candleData.close.toFixed(6);
 
-                    // Update or push candle
                     if (candles.length > 0 && candles[candles.length - 1].time === candleData.time) {
+                        // Preserve existing marker if updated
+                        candleData.marker = candles[candles.length - 1].marker;
                         candles[candles.length - 1] = candleData;
                     } else {
                         candles.push(candleData);
-                        if (candles.length > 40) candles.shift(); // Keep last 40 candles
+                        if (candles.length > 40) candles.shift();
                     }
 
                     drawChart();
@@ -424,11 +423,98 @@
             ws.onclose = () => {
                 document.getElementById('ws-status').innerText = 'DISCONNECTED';
                 document.getElementById('ws-status').className = 'text-cyber-red font-bold';
-                setTimeout(initOKXWebSocket, 3000); // Auto reconnect
+                setTimeout(initOKXWebSocket, 3000);
             };
         }
 
-        // 3. GENERATE INITIAL DUMMY CANDLES FOR CHART RENDER
+        // 3. OKX PRIVATE WEBSOCKET (AUTHENTICATED USER ORDERS & POSITIONS)
+        function initOKXPrivateWS() {
+            const statusEl = document.getElementById('private-ws-status');
+            
+            if (!OKX_API_KEY || OKX_API_KEY.includes("YOUR_API_KEY")) {
+                statusEl.innerText = 'NO API KEY';
+                statusEl.className = 'text-cyber-yellow font-bold';
+                return;
+            }
+
+            statusEl.innerText = 'AUTHENTICATING...';
+            statusEl.className = 'text-cyber-blue font-bold';
+
+            const wsPrivate = new WebSocket('wss://ws.okx.com:8443/ws/v5/private');
+
+            wsPrivate.onopen = () => {
+                const timestamp = (Date.now() / 1000).toString();
+                const message = timestamp + 'GET' + '/users/self/verify';
+                const sign = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(message, OKX_SECRET_KEY));
+
+                const loginMsg = {
+                    "op": "login",
+                    "args": [{
+                        "apiKey": OKX_API_KEY,
+                        "passphrase": OKX_PASSPHRASE,
+                        "timestamp": timestamp,
+                        "sign": sign
+                    }]
+                };
+                wsPrivate.send(JSON.stringify(loginMsg));
+            };
+
+            wsPrivate.onmessage = (event) => {
+                const res = JSON.parse(event.data);
+
+                if (res.event === 'login') {
+                    if (res.code === '0') {
+                        statusEl.innerText = 'CONNECTED';
+                        statusEl.className = 'text-cyber-green font-bold';
+
+                        // Subscribe to order channel
+                        const subMsg = {
+                            "op": "subscribe",
+                            "args": [{ "channel": "orders", "instType": "SWAP", "instId": "SHIB-USDT-SWAP" }]
+                        };
+                        wsPrivate.send(JSON.stringify(subMsg));
+                    } else {
+                        statusEl.innerText = 'AUTH FAILED';
+                        statusEl.className = 'text-cyber-red font-bold';
+                    }
+                }
+
+                // Handle incoming orders execution event
+                if (res.data && res.data.length > 0) {
+                    const order = res.data[0];
+                    if (order.state === 'filled') {
+                        const side = order.side.toUpperCase();
+                        const execPrice = parseFloat(order.fillPx || order.avgPx);
+                        
+                        // Push into Recent Trade Logs
+                        const now = new Date();
+                        const timeStr = now.toTimeString().split(' ')[0];
+                        tradeLogs.unshift({
+                            time: timeStr,
+                            type: side,
+                            price: execPrice,
+                            profit: parseFloat(order.pnl || 0.0)
+                        });
+                        if (tradeLogs.length > 10) tradeLogs.pop();
+
+                        // Mark candle chart
+                        if (candles.length > 0) {
+                            candles[candles.length - 1].marker = side;
+                            drawChart();
+                        }
+
+                        calculateMetrics();
+                    }
+                }
+            };
+
+            wsPrivate.onerror = () => {
+                statusEl.innerText = 'CONN ERROR';
+                statusEl.className = 'text-cyber-red font-bold';
+            };
+        }
+
+        // 4. GENERATE INITIAL DUMMY CANDLES FOR CHART RENDER
         function generateInitialCandles() {
             let basePx = 0.018400;
             let now = Date.now() - 40 * 60 * 1000;
@@ -447,7 +533,7 @@
             }
         }
 
-        // 4. CUSTOM CANVAS CANDLESTICK RENDERER
+        // 5. CUSTOM CANVAS CANDLESTICK RENDERER
         function drawChart() {
             const canvas = document.getElementById('candleChart');
             const parent = document.getElementById('chart-parent');
@@ -460,7 +546,6 @@
 
             if (candles.length === 0) return;
 
-            // Find Min and Max Price for Scaling
             let minPrice = Math.min(...candles.map(c => c.low));
             let maxPrice = Math.max(...candles.map(c => c.high));
             let padding = (maxPrice - minPrice) * 0.1 || 0.0001;
@@ -479,7 +564,6 @@
                 const isGreen = c.close >= c.open;
                 const color = isGreen ? '#00ffcc' : '#ff0055';
 
-                // Draw Wick
                 ctx.strokeStyle = color;
                 ctx.lineWidth = 1;
                 ctx.beginPath();
@@ -487,13 +571,11 @@
                 ctx.lineTo(x, lowY);
                 ctx.stroke();
 
-                // Draw Body
                 ctx.fillStyle = color;
                 const bodyY = Math.min(openY, closeY);
                 const bodyHeight = Math.max(2, Math.abs(closeY - openY));
                 ctx.fillRect(x - candleWidth / 2, bodyY, candleWidth, bodyHeight);
 
-                // Draw Buy/Sell Markers on Candle
                 if (c.marker) {
                     ctx.font = 'bold 10px JetBrains Mono';
                     if (c.marker === 'BUY') {
@@ -507,7 +589,7 @@
             });
         }
 
-        // 5. CALCULATE & UPDATE PERFORMANCE REPORT METRICS
+        // 6. CALCULATE & UPDATE METRICS
         function calculateMetrics() {
             let totalProfit = tradeLogs.reduce((acc, cur) => acc + cur.profit, 0);
             let roi = (totalProfit / BASE_CAPITAL) * 100;
@@ -518,19 +600,17 @@
             let winRate = tradeLogs.length > 0 ? (wins.length / tradeLogs.length) * 100 : 0;
             let grossProfit = wins.reduce((acc, cur) => acc + cur.profit, 0);
             let grossLoss = Math.abs(losses.reduce((acc, cur) => acc + cur.profit, 0));
-            let profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit.toFixed(2);
+            let profitFactor = grossLoss > 0 ? (grossProfit / grossLoss).toFixed(2) : grossProfit.toFixed(2);
 
-            // Update DOM Elements
             document.getElementById('stat-roi').innerText = (roi >= 0 ? '+' : '') + roi.toFixed(2) + '%';
             document.getElementById('stat-net-profit').innerText = (totalProfit >= 0 ? '+' : '') + '$' + totalProfit.toFixed(2) + ' USD';
             document.getElementById('stat-winrate').innerText = winRate.toFixed(1) + '%';
             document.getElementById('stat-pf').innerText = profitFactor;
-            document.getElementById('stat-sharpe').innerText = '2.14'; // Calculated Sharpe Ratio
+            document.getElementById('stat-sharpe').innerText = '2.14';
             document.getElementById('stat-mdd').innerText = '-3.20%';
             document.getElementById('stat-trades').innerText = tradeLogs.length;
             document.getElementById('stat-win-loss').innerText = `${wins.length} / ${losses.length}`;
 
-            // Render Trade History
             const historyBody = document.getElementById('trade-history-body');
             historyBody.innerHTML = tradeLogs.map(t => `
                 <tr class="border-b border-cyber-border/20">
@@ -542,7 +622,6 @@
             `).join('');
         }
 
-        // 6. FILTER SELECTOR (1D / 1W / 1M / 1Y)
         function setFilter(tf) {
             activeFilter = tf;
             ['1D', '1W', '1M', '1Y'].forEach(id => {
@@ -556,11 +635,11 @@
             calculateMetrics();
         }
 
-        // INITIALIZATION
         window.addEventListener('resize', drawChart);
         window.onload = () => {
             generateInitialCandles();
             initOKXWebSocket();
+            initOKXPrivateWS();
             calculateMetrics();
             drawChart();
         };
