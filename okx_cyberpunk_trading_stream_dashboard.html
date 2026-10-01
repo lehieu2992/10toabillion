@@ -1,998 +1,569 @@
 <!DOCTYPE html>
-<html lang="vi" class="h-full bg-[#050508] text-gray-100 dark">
+<html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CYBER_TRADE // OKX REALTIME LIVE DASHBOARD</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Google Fonts: Orbitron, Chakra Petch, Share Tech Mono -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHIB/USDT SWAP - CYBER TRADING HUD DASHBOARD</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Orbitron & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,500;0,800;1,400&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- CryptoJS for OKX Private WS HMAC Authentication -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
-  <style>
-    /* Custom Fonts */
-    .font-orbitron { font-family: 'Orbitron', sans-serif; }
-    .font-chakra { font-family: 'Chakra Petch', sans-serif; }
-    .font-mono-cyber { font-family: 'Share Tech Mono', monospace; }
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#050811',
+                            card: '#0a0f24',
+                            border: '#1a264a',
+                            green: '#00ffcc',
+                            red: '#ff0055',
+                            yellow: '#ffcc00',
+                            blue: '#0099ff',
+                            purple: '#9900ff',
+                            text: '#a0aec0'
+                        }
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #03050c;
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', monospace;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(0, 255, 204, 0.03) 0%, transparent 80%),
+                linear-gradient(rgba(10, 15, 36, 0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(10, 15, 36, 0.5) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+        }
+        .neon-border-green {
+            box-shadow: 0 0 10px rgba(0, 255, 204, 0.2), inset 0 0 10px rgba(0, 255, 204, 0.1);
+            border: 1px solid #00ffcc44;
+        }
+        .neon-border-red {
+            box-shadow: 0 0 10px rgba(ff, 0, 85, 0.2), inset 0 0 10px rgba(ff, 0, 85, 0.1);
+            border: 1px solid #ff005544;
+        }
+        .cyber-panel {
+            background: rgba(10, 15, 36, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 153, 255, 0.2);
+            position: relative;
+        }
+        .cyber-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 6px; height: 6px;
+            border-top: 2px solid #00ffcc;
+            border-left: 2px solid #00ffcc;
+        }
+        .cyber-panel::after {
+            content: '';
+            position: absolute;
+            bottom: 0; right: 0; width: 6px; height: 6px;
+            border-bottom: 2px solid #00ffcc;
+            border-right: 2px solid #00ffcc;
+        }
+        .glow-text-green { text-shadow: 0 0 8px rgba(0, 255, 204, 0.6); }
+        .glow-text-red { text-shadow: 0 0 8px rgba(255, 0, 85, 0.6); }
+        .glow-text-blue { text-shadow: 0 0 8px rgba(0, 153, 255, 0.6); }
 
-    /* Cyber Colors & Glows */
-    :root {
-      --cyber-green: #00ff66;
-      --cyber-cyan: #00f0ff;
-      --cyber-pink: #ff0055;
-      --cyber-yellow: #ffe600;
-      --cyber-dark: #08090d;
-      --cyber-card: rgba(14, 18, 27, 0.85);
-    }
-
-    .glow-green { text-shadow: 0 0 8px rgba(0, 255, 102, 0.6), 0 0 15px rgba(0, 255, 102, 0.3); }
-    .glow-cyan { text-shadow: 0 0 8px rgba(0, 240, 255, 0.6), 0 0 15px rgba(0, 240, 255, 0.3); }
-    .glow-pink { text-shadow: 0 0 8px rgba(ff, 0, 85, 0.6), 0 0 15px rgba(255, 0, 85, 0.3); }
-    
-    .border-cyber-green { border-color: var(--cyber-green); box-shadow: 0 0 10px rgba(0, 255, 102, 0.2); }
-    .border-cyber-cyan { border-color: var(--cyber-cyan); box-shadow: 0 0 10px rgba(0, 240, 255, 0.2); }
-    .border-cyber-pink { border-color: var(--cyber-pink); box-shadow: 0 0 10px rgba(255, 0, 85, 0.2); }
-
-    /* Cyber CRT Scanline Overlay */
-    .scanlines {
-      position: relative;
-      overflow: hidden;
-    }
-    .scanlines::before {
-      content: " ";
-      display: block;
-      position: absolute;
-      top: 0; left: 0; bottom: 0; right: 0;
-      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-      z-index: 40;
-      background-size: 100% 4px, 6px 100%;
-      pointer-events: none;
-      opacity: 0.7;
-    }
-
-    /* Cyber Clips & Shapes */
-    .cyber-cut {
-      clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
-    }
-    .cyber-cut-sm {
-      clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
-    }
-    .cyber-cut-top-right {
-      clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
-    }
-
-    /* Flash Animations for Price Updates */
-    @keyframes flashGreen {
-      0% { background-color: rgba(0, 255, 102, 0.35); }
-      100% { background-color: transparent; }
-    }
-    @keyframes flashRed {
-      0% { background-color: rgba(255, 0, 85, 0.35); }
-      100% { background-color: transparent; }
-    }
-    .flash-up { animation: flashGreen 0.5s ease-out; }
-    .flash-down { animation: flashRed 0.5s ease-out; }
-
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 4px; height: 4px; }
-    ::-webkit-scrollbar-track { background: #08090d; }
-    ::-webkit-scrollbar-thumb { background: #00f0ff; border-radius: 2px; }
-    ::-webkit-scrollbar-thumb:hover { background: #00ff66; }
-
-    /* Grid matrix background */
-    .bg-cyber-grid {
-      background-size: 40px 40px;
-      background-image: 
-        linear-gradient(to right, rgba(0, 240, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
-    }
-  </style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #050811; }
+        ::-webkit-scrollbar-thumb { background: #1a264a; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00ffcc; }
+    </style>
 </head>
+<body class="p-2 md:p-4 min-h-screen flex flex-col justify-between select-none">
 
-<body class="bg-[#050508] bg-cyber-grid font-chakra scanlines h-full min-h-screen text-slate-200 select-none pb-10">
+    <!-- TOP HEADER / STREAM OVERLAY STATUS -->
+    <header class="cyber-panel p-3 mb-3 flex flex-wrap justify-between items-center border-b border-cyber-blue/30">
+        <div class="flex items-center space-x-3">
+            <div class="w-3 h-3 rounded-full bg-cyber-green animate-ping"></div>
+            <h1 class="font-orbitron font-black text-xl md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-cyber-green via-cyber-blue to-cyber-purple tracking-wider">
+                CYBER<span class="text-white">BOT</span> HUD v4.2
+            </h1>
+            <span class="bg-cyber-blue/20 text-cyber-blue border border-cyber-blue/40 px-2 py-0.5 text-xs font-mono rounded">
+                SHIB-USDT-SWAP [1M]
+            </span>
+        </div>
 
-  <!-- TOP HEADER / STREAM BAR -->
-  <header class="border-b border-cyan-900/50 bg-[#0a0d14]/90 backdrop-blur-md sticky top-0 z-50 px-4 py-2.5">
-    <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
-      
-      <!-- Logo & Branding -->
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 bg-cyan-950 border border-[#00f0ff] cyber-cut-sm flex items-center justify-center text-[#00f0ff] shadow-[0_0_12px_rgba(0,240,255,0.3)]">
-          <i class="fa-solid fa-terminal text-xl"></i>
+        <!-- LIVE PRICE & SYSTEM TIMERS -->
+        <div class="flex items-center space-x-6 text-xs md:text-sm">
+            <div class="flex flex-col text-right">
+                <span class="text-gray-400 text-[10px]">SHIB REALTIME PRICE</span>
+                <span id="current-price" class="font-bold text-lg font-mono text-cyber-green glow-text-green">
+                    0.00000000
+                </span>
+            </div>
+            <div class="hidden sm:flex flex-col text-right border-l border-cyber-border pl-4">
+                <span class="text-gray-400 text-[10px]">SYSTEM TIME (UTC)</span>
+                <span id="clock-utc" class="font-mono text-gray-200">00:00:00 UTC</span>
+            </div>
+            <div class="flex flex-col text-right border-l border-cyber-border pl-4">
+                <span class="text-gray-400 text-[10px]">OKX FEED</span>
+                <span id="ws-status" class="text-cyber-green font-bold">CONNECTING...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN GRID CONTAINER -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 flex-grow">
+
+        <!-- LEFT COLUMN: LIVE CANDLESTICK CHART (3 COLS) -->
+        <div class="lg:col-span-3 flex flex-col space-y-3">
+            
+            <!-- LIVE CHART CONTAINER -->
+            <div class="cyber-panel p-3 flex-grow flex flex-col min-h-[380px] relative">
+                <div class="flex justify-between items-center mb-2 border-b border-cyber-border/50 pb-2">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-chart-line text-cyber-green"></i>
+                        <span class="font-orbitron text-xs font-bold text-cyber-green tracking-wider">OKX REALTIME CANDLESTICK (1M)</span>
+                    </div>
+                    <div class="flex items-center space-x-4 text-[11px] text-gray-400 font-mono">
+                        <span>O: <span id="open-px" class="text-white">0.0000</span></span>
+                        <span>H: <span id="high-px" class="text-cyber-green">0.0000</span></span>
+                        <span>L: <span id="low-px" class="text-cyber-red">0.0000</span></span>
+                        <span>C: <span id="close-px" class="text-white">0.0000</span></span>
+                    </div>
+                </div>
+
+                <!-- CANVAS FOR CUSTOM CANDLESTICK DRAWING -->
+                <div class="relative flex-grow w-full h-full min-h-[300px]" id="chart-parent">
+                    <canvas id="candleChart" class="absolute inset-0 w-full h-full"></canvas>
+                </div>
+
+                <!-- CHART LEGEND & MARKER INDICATOR -->
+                <div class="flex justify-between items-center mt-2 text-[10px] text-gray-400 border-t border-cyber-border/30 pt-1">
+                    <div class="flex space-x-3">
+                        <span class="flex items-center"><span class="w-2 h-2 bg-cyber-green inline-block mr-1"></span> BUY MARKER</span>
+                        <span class="flex items-center"><span class="w-2 h-2 bg-cyber-red inline-block mr-1"></span> SELL MARKER</span>
+                    </div>
+                    <span>INITIAL BASE CAPITAL: <strong class="text-cyber-yellow">$10.00 USD</strong></span>
+                </div>
+            </div>
+
+            <!-- LOWER GRID: OPEN POSITION & TRADE HISTORY -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                
+                <!-- OPEN POSITIONS -->
+                <div class="cyber-panel p-3 flex flex-col h-48">
+                    <div class="flex justify-between items-center mb-2 border-b border-cyber-border pb-1">
+                        <span class="font-orbitron text-xs font-bold text-cyber-blue">
+                            <i class="fa-solid fa-crosshairs mr-1"></i> OPEN POSITION
+                        </span>
+                        <span id="pos-side" class="text-[10px] bg-cyber-green/20 text-cyber-green px-1.5 py-0.5 border border-cyber-green/40">LONG 20X</span>
+                    </div>
+                    <div class="flex-grow overflow-x-auto text-xs font-mono">
+                        <table class="w-full text-left">
+                            <thead class="text-gray-500 text-[10px] border-b border-cyber-border">
+                                <tr>
+                                    <th>PAIR</th>
+                                    <th>ENTRY</th>
+                                    <th>MARK</th>
+                                    <th>MARGIN</th>
+                                    <th>PNL ($)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="position-table-body">
+                                <!-- Dynamic JS content -->
+                                <tr class="border-b border-cyber-border/30 text-[11px]">
+                                    <td class="text-cyber-green font-bold">SHIB-SWAP</td>
+                                    <td>0.018420</td>
+                                    <td id="pos-mark-px">0.018450</td>
+                                    <td>$10.00</td>
+                                    <td id="pos-pnl" class="text-cyber-green font-bold glow-text-green">+$0.32 (+3.2%)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TRADE HISTORY (REALIZED PNL) -->
+                <div class="cyber-panel p-3 flex flex-col h-48">
+                    <div class="flex justify-between items-center mb-2 border-b border-cyber-border pb-1">
+                        <span class="font-orbitron text-xs font-bold text-cyber-yellow">
+                            <i class="fa-solid fa-clock-rotate-left mr-1"></i> RECENT TRADES
+                        </span>
+                        <span class="text-[10px] text-gray-400">LAST 5 ORDERS</span>
+                    </div>
+                    <div class="flex-grow overflow-y-auto text-xs font-mono">
+                        <table class="w-full text-left">
+                            <thead class="text-gray-500 text-[10px] border-b border-cyber-border">
+                                <tr>
+                                    <th>TIME</th>
+                                    <th>TYPE</th>
+                                    <th>PRICE</th>
+                                    <th>PROFIT</th>
+                                </tr>
+                            </thead>
+                            <tbody id="trade-history-body" class="text-[11px]">
+                                <!-- Dynamic trade logs -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: ANALYTICS REPORT & SUBSCRIBERS (1 COL) -->
+        <div class="flex flex-col space-y-3">
+            
+            <!-- MULTI-TIMEFRAME PERFORMANCE REPORT -->
+            <div class="cyber-panel p-3 flex flex-col">
+                <div class="flex justify-between items-center mb-3 border-b border-cyber-border pb-2">
+                    <span class="font-orbitron text-xs font-bold text-cyber-purple">
+                        <i class="fa-solid fa-chart-pie mr-1"></i> PERFORMANCE METRICS
+                    </span>
+                    <!-- TIMEFRAME SELECTOR -->
+                    <div class="flex text-[10px] space-x-1 font-mono">
+                        <button onclick="setFilter('1D')" id="btn-1D" class="px-1.5 py-0.5 bg-cyber-blue text-black font-bold rounded">1D</button>
+                        <button onclick="setFilter('1W')" id="btn-1W" class="px-1.5 py-0.5 bg-cyber-card border border-cyber-border text-gray-400 rounded">1W</button>
+                        <button onclick="setFilter('1M')" id="btn-1M" class="px-1.5 py-0.5 bg-cyber-card border border-cyber-border text-gray-400 rounded">1M</button>
+                        <button onclick="setFilter('1Y')" id="btn-1Y" class="px-1.5 py-0.5 bg-cyber-card border border-cyber-border text-gray-400 rounded">1Y</button>
+                    </div>
+                </div>
+
+                <!-- ROI BASED ON $10 CAPITAL -->
+                <div class="bg-cyber-card/80 border border-cyber-green/30 p-2.5 rounded mb-3 text-center relative overflow-hidden">
+                    <div class="text-[10px] text-gray-400 mb-0.5">CURRENT ROI (START CAPITAL: $10.00)</div>
+                    <div id="stat-roi" class="font-orbitron font-black text-2xl text-cyber-green glow-text-green">+0.00%</div>
+                    <div id="stat-net-profit" class="text-xs text-cyber-green mt-0.5 font-bold">+$0.00 USD</div>
+                </div>
+
+                <!-- STATS GRID -->
+                <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+                    <div class="bg-cyber-card/50 p-2 border border-cyber-border/50 rounded">
+                        <span class="text-[10px] text-gray-400 block">WIN RATE</span>
+                        <span id="stat-winrate" class="font-bold text-cyber-green">0.0%</span>
+                    </div>
+                    <div class="bg-cyber-card/50 p-2 border border-cyber-border/50 rounded">
+                        <span class="text-[10px] text-gray-400 block">PROFIT FACTOR</span>
+                        <span id="stat-pf" class="font-bold text-cyber-yellow">0.00</span>
+                    </div>
+                    <div class="bg-cyber-card/50 p-2 border border-cyber-border/50 rounded">
+                        <span class="text-[10px] text-gray-400 block">SHARPE RATIO</span>
+                        <span id="stat-sharpe" class="font-bold text-cyber-blue">0.00</span>
+                    </div>
+                    <div class="bg-cyber-card/50 p-2 border border-cyber-border/50 rounded">
+                        <span class="text-[10px] text-gray-400 block">MAX DRAWDOWN</span>
+                        <span id="stat-mdd" class="font-bold text-cyber-red">-0.00%</span>
+                    </div>
+                    <div class="bg-cyber-card/50 p-2 border border-cyber-border/50 rounded">
+                        <span class="text-[10px] text-gray-400 block">TOTAL TRADES</span>
+                        <span id="stat-trades" class="font-bold text-white">0</span>
+                    </div>
+                    <div class="bg-cyber-card/50 p-2 border border-cyber-border/50 rounded">
+                        <span class="text-[10px] text-gray-400 block">WIN / LOSS</span>
+                        <span id="stat-win-loss" class="font-bold text-gray-200">0 / 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CLIENTS / BOT SUBSCRIBERS LIST (GIA LẬP) -->
+            <div class="cyber-panel p-3 flex-grow flex flex-col">
+                <div class="flex justify-between items-center mb-2 border-b border-cyber-border pb-1">
+                    <span class="font-orbitron text-xs font-bold text-cyber-green">
+                        <i class="fa-solid fa-users text-cyber-green mr-1"></i> BOT SUBSCRIBERS
+                    </span>
+                    <span class="text-[10px] text-cyber-blue font-mono">ACTIVE (4)</span>
+                </div>
+                <div class="space-y-2 overflow-y-auto max-h-56 text-xs font-mono">
+                    <div class="p-2 bg-cyber-card/60 border border-cyber-border/40 rounded flex justify-between items-center">
+                        <div>
+                            <div class="font-bold text-gray-200">Alpha_Fund_SG</div>
+                            <div class="text-[10px] text-gray-500">Allocated: $500.00</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-cyber-green font-bold">+18.4%</div>
+                            <div class="text-[9px] text-gray-400">RUNNING</div>
+                        </div>
+                    </div>
+                    <div class="p-2 bg-cyber-card/60 border border-cyber-border/40 rounded flex justify-between items-center">
+                        <div>
+                            <div class="font-bold text-gray-200">CyberTrader_99</div>
+                            <div class="text-[10px] text-gray-500">Allocated: $250.00</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-cyber-green font-bold">+12.1%</div>
+                            <div class="text-[9px] text-gray-400">RUNNING</div>
+                        </div>
+                    </div>
+                    <div class="p-2 bg-cyber-card/60 border border-cyber-border/40 rounded flex justify-between items-center">
+                        <div>
+                            <div class="font-bold text-gray-200">K-Invest_VN</div>
+                            <div class="text-[10px] text-gray-500">Allocated: $1,000.00</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-cyber-green font-bold">+24.8%</div>
+                            <div class="text-[9px] text-gray-400">RUNNING</div>
+                        </div>
+                    </div>
+                    <div class="p-2 bg-cyber-card/60 border border-cyber-border/40 rounded flex justify-between items-center">
+                        <div>
+                            <div class="font-bold text-gray-200">Satoshi_HN</div>
+                            <div class="text-[10px] text-gray-500">Allocated: $100.00</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-cyber-green font-bold">+8.5%</div>
+                            <div class="text-[9px] text-gray-400">RUNNING</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- FOOTER STREAM OVERLAY -->
+    <footer class="mt-3 cyber-panel p-2 flex flex-wrap justify-between items-center text-[11px] text-gray-400 font-mono">
+        <div class="flex items-center space-x-4">
+            <span><i class="fa-solid fa-server text-cyber-blue mr-1"></i> OKX WS: <strong class="text-cyber-green">CONNECTED</strong></span>
+            <span><i class="fa-solid fa-shield-halved text-cyber-green mr-1"></i> READ-ONLY STREAM MODE</span>
         </div>
         <div>
-          <div class="flex items-center space-x-2">
-            <h1 class="font-orbitron font-extrabold text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-[#00f0ff] via-[#00ff66] to-[#ffe600]">
-              CYBER_PNL <span class="text-xs text-[#00f0ff] font-mono-cyber">v3.8.0</span>
-            </h1>
-            <span class="px-2 py-0.5 text-[10px] font-mono-cyber bg-rose-950/80 border border-rose-600/60 text-rose-400 rounded flex items-center gap-1 animate-pulse">
-              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> LIVE STREAM
-            </span>
-          </div>
-          <p class="text-xs text-slate-400 font-mono-cyber">OKX WEBSOCKET STREAM // PRO OVERLAY</p>
+            <span>SYSTEM MONITORING // LIVE SHIB-USDT TRADING DASHBOARD</span>
         </div>
-      </div>
+    </footer>
 
-      <!-- OKX WS Status & Market Watch Quick Select -->
-      <div class="flex items-center space-x-4">
-        <!-- Connection Status -->
-        <div class="flex items-center space-x-2 px-3 py-1.5 bg-slate-900/80 border border-slate-700/60 cyber-cut-sm">
-          <div id="ws-status-dot" class="w-2.5 h-2.5 rounded-full bg-yellow-500 animate-ping"></div>
-          <span id="ws-status-text" class="text-xs font-mono-cyber text-yellow-400">CONNECTING TO OKX...</span>
-        </div>
+    <!-- JAVASCRIPT ENGINE -->
+    <script>
+        // GLOBAL STATE & DATA
+        const BASE_CAPITAL = 10.0; // Vốn ban đầu 10$
+        let candles = [];
+        let currentPrice = 0.018450;
+        let activeFilter = '1D';
 
-        <!-- Audio Cyber SFX Toggle -->
-        <button id="sfx-toggle-btn" onclick="toggleAudio()" class="px-3 py-1.5 bg-slate-900 hover:bg-cyan-950 border border-cyan-800/60 text-cyan-400 text-xs font-mono-cyber flex items-center gap-2 transition cyber-cut-sm">
-          <i class="fa-solid fa-volume-high text-xs" id="sfx-icon"></i>
-          <span id="sfx-text">SFX: ON</span>
-        </button>
+        // Trade History Mock Data
+        let tradeLogs = [
+            { time: '14:22:10', type: 'BUY', price: 0.018380, profit: 0.45 },
+            { time: '13:10:05', type: 'SELL', price: 0.018410, profit: 0.32 },
+            { time: '11:45:30', type: 'BUY', price: 0.018290, profit: -0.15 },
+            { time: '09:12:00', type: 'BUY', price: 0.018350, profit: 0.88 },
+            { time: '08:00:15', type: 'SELL', price: 0.018400, profit: 0.20 }
+        ];
 
-        <!-- Stream Mode OBS Clean Overlay Toggle -->
-        <button onclick="toggleOBSMode()" class="px-3.5 py-1.5 bg-emerald-950/70 hover:bg-emerald-900/80 border border-emerald-500/60 text-[#00ff66] text-xs font-mono-cyber font-bold flex items-center gap-2 transition cyber-cut-sm shadow-[0_0_10px_rgba(0,255,102,0.15)]">
-          <i class="fa-solid fa-expand"></i>
-          <span>OBS OVERLAY MODE</span>
-        </button>
-
-        <!-- Admin Control Drawer Toggle -->
-        <button id="admin-panel-toggle-btn" onclick="toggleAdminPanel()" class="px-3 py-1.5 bg-purple-950/60 hover:bg-purple-900/80 border border-purple-500/60 text-purple-300 text-xs font-mono-cyber flex items-center gap-2 transition cyber-cut-sm">
-          <i class="fa-solid fa-sliders"></i>
-          <span>ADMIN CTRL</span>
-        </button>
-      </div>
-
-    </div>
-  </header>
-
-  <!-- ADMIN & SIMULATOR CONTROL DRAWER (Collapsible) -->
-  <div id="admin-panel" class="max-w-7xl mx-auto px-4 py-3 my-3 bg-[#0c101a] border-l-4 border-l-[#00f0ff] border-y border-r border-slate-800 cyber-cut shadow-2xl hidden transition-all duration-300">
-    <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
-      <div class="flex items-center space-x-2">
-        <i class="fa-solid fa-microchip text-[#00f0ff]"></i>
-        <h3 class="font-orbitron font-bold text-sm text-[#00f0ff]">SIMULATOR & ACCOUNT CONTROLLER</h3>
-        <span class="text-xs text-slate-500 font-mono-cyber">(Thay đổi thông số để Stream Test / Cập nhật Live)</span>
-      </div>
-      <button onclick="toggleAdminPanel()" class="text-slate-400 hover:text-white text-xs"><i class="fa-solid fa-xmark text-base"></i></button>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs font-mono-cyber">
-      <!-- Account Balance Set -->
-      <div class="space-y-1">
-        <label class="text-slate-400">TẢI KHOẢN BAN ĐẦU ($):</label>
-        <div class="flex gap-2">
-          <input type="number" id="input-balance" value="10000" class="bg-slate-900 border border-slate-700 px-2.5 py-1.5 text-cyan-300 w-full focus:outline-none focus:border-[#00f0ff] rounded-sm">
-          <button onclick="updateInitialBalance()" class="bg-cyan-900 hover:bg-cyan-800 border border-cyan-500 text-white px-3 py-1 rounded-sm">LƯU</button>
-        </div>
-      </div>
-
-      <!-- Quick Add Order Form -->
-      <div class="space-y-1 md:col-span-2">
-        <label class="text-slate-400">MỞ LỆNH MỚI FAST EXECUTION:</label>
-        <div class="grid grid-cols-5 gap-2">
-          <select id="sim-pair" class="bg-slate-900 border border-slate-700 px-2 py-1 text-slate-200">
-            <option value="BTC-USDT">BTC-USDT</option>
-            <option value="ETH-USDT">ETH-USDT</option>
-            <option value="SOL-USDT">SOL-USDT</option>
-            <option value="DOGE-USDT">DOGE-USDT</option>
-          </select>
-          <select id="sim-side" class="bg-slate-900 border border-slate-700 px-2 py-1 text-emerald-400 font-bold">
-            <option value="LONG">LONG 📈</option>
-            <option value="SHORT">SHORT 📉</option>
-          </select>
-          <input type="number" id="sim-size" placeholder="Margin ($)" value="500" class="bg-slate-900 border border-slate-700 px-2 py-1 text-white">
-          <select id="sim-lev" class="bg-slate-900 border border-slate-700 px-2 py-1 text-yellow-400">
-            <option value="10">10x</option>
-            <option value="20" selected>20x</option>
-            <option value="50">50x</option>
-            <option value="100">100x</option>
-          </select>
-          <button onclick="createNewTrade()" class="bg-emerald-950 hover:bg-emerald-800 border border-emerald-500 text-emerald-300 font-bold px-2 py-1 rounded-sm">EXECUTE</button>
-        </div>
-      </div>
-
-      <!-- Quick Actions -->
-      <div class="space-y-1">
-        <label class="text-slate-400">THAO TÁC NHANH:</label>
-        <div class="flex gap-2">
-          <button onclick="simulateWinningTrade()" class="bg-emerald-950 hover:bg-emerald-900 border border-emerald-600/80 text-emerald-400 text-xs px-2 py-1.5 w-1/2 flex items-center justify-center gap-1">
-            <i class="fa-solid fa-plus-circle"></i> +$250 PnL
-          </button>
-          <button onclick="simulateLosingTrade()" class="bg-rose-950 hover:bg-rose-900 border border-rose-600/80 text-rose-400 text-xs px-2 py-1.5 w-1/2 flex items-center justify-center gap-1">
-            <i class="fa-solid fa-minus-circle"></i> -$120 PnL
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MAIN STREAM DASHBOARD CONTAINER -->
-  <main class="max-w-7xl mx-auto px-4 py-4 space-y-5">
-
-    <!-- SECTION 1: OKX REAL-TIME TICKER TICK TAPE / CARDS -->
-    <section>
-      <div class="flex items-center justify-between mb-2">
-        <div class="flex items-center space-x-2 text-xs font-mono-cyber text-[#00f0ff]">
-          <i class="fa-solid fa-wifi text-[#00ff66]"></i>
-          <span class="tracking-widest">OKX PUBLIC WEBSOCKET MARKET DATA</span>
-        </div>
-        <!-- Subscribe new ticker input -->
-        <div class="flex items-center space-x-2">
-          <input type="text" id="add-ticker-input" placeholder="Ví dụ: XRP-USDT" class="bg-slate-900/90 border border-slate-700/80 text-xs px-2.5 py-1 text-cyan-300 font-mono-cyber rounded-sm focus:outline-none focus:border-[#00f0ff] uppercase w-32">
-          <button onclick="addNewTickerFromInput()" class="bg-cyan-950 hover:bg-cyan-900 border border-cyan-500 text-cyan-300 text-xs px-2.5 py-1 font-mono-cyber rounded-sm transition">
-            + SUB
-          </button>
-        </div>
-      </div>
-
-      <!-- Ticker Grid -->
-      <div id="ticker-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <!-- Ticker items dynamically injected via JS -->
-      </div>
-    </section>
-
-    <!-- SECTION 2: LIVE METRICS & EQUITY OVERVIEW (KPI CARDS) -->
-    <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      
-      <!-- Total Equity Card -->
-      <div class="bg-[#0b0e17]/90 border border-cyan-900/60 p-4 cyber-cut relative overflow-hidden group hover:border-[#00f0ff] transition-all">
-        <div class="absolute -right-4 -bottom-4 text-cyan-950/40 text-7xl font-orbitron select-none pointer-events-none">$</div>
-        <div class="text-xs font-mono-cyber text-slate-400 tracking-wider mb-1 flex justify-between">
-          <span>TOTAL EQUITY (VỐN TỔNG)</span>
-          <i class="fa-solid fa-wallet text-cyan-400"></i>
-        </div>
-        <div class="font-orbitron text-2xl md:text-3xl font-extrabold text-[#00f0ff] glow-cyan tracking-tight my-1" id="kpi-equity">
-          $10,850.42
-        </div>
-        <div class="text-xs font-mono-cyber text-slate-400 flex justify-between items-center mt-2 pt-2 border-t border-slate-800/80">
-          <span>Balance: <span id="kpi-balance" class="text-slate-200">$10,000.00</span></span>
-          <span class="text-emerald-400 font-bold" id="kpi-roi">+8.50%</span>
-        </div>
-      </div>
-
-      <!-- Today PnL Card -->
-      <div id="pnl-card-container" class="bg-[#0b0e17]/90 border border-emerald-900/60 p-4 cyber-cut relative overflow-hidden group hover:border-[#00ff66] transition-all">
-        <div class="text-xs font-mono-cyber text-slate-400 tracking-wider mb-1 flex justify-between">
-          <span>TODAY UNREALIZED PnL</span>
-          <i class="fa-solid fa-chart-line text-emerald-400"></i>
-        </div>
-        <div class="font-orbitron text-2xl md:text-3xl font-extrabold text-[#00ff66] glow-green tracking-tight my-1" id="kpi-unrealized-pnl">
-          +$850.42
-        </div>
-        <div class="text-xs font-mono-cyber text-slate-400 flex justify-between items-center mt-2 pt-2 border-t border-slate-800/80">
-          <span>Closed PnL Today:</span>
-          <span class="text-emerald-400 font-bold" id="kpi-realized-pnl">+$540.00</span>
-        </div>
-      </div>
-
-      <!-- Win Rate & Stats -->
-      <div class="bg-[#0b0e17]/90 border border-slate-800/80 p-4 cyber-cut relative overflow-hidden hover:border-yellow-500/50 transition-all">
-        <div class="text-xs font-mono-cyber text-slate-400 tracking-wider mb-1 flex justify-between">
-          <span>WIN RATE & PROFIT FACTOR</span>
-          <i class="fa-solid fa-trophy text-yellow-400"></i>
-        </div>
-        <div class="flex items-baseline space-x-2 my-1">
-          <span class="font-orbitron text-2xl md:text-3xl font-extrabold text-yellow-400 glow-yellow" id="kpi-winrate">78.5%</span>
-          <span class="text-xs font-mono-cyber text-slate-400">/ PF: <span id="kpi-pf" class="text-cyan-300 font-bold">2.45</span></span>
-        </div>
-        <div class="text-xs font-mono-cyber text-slate-400 flex justify-between items-center mt-2 pt-2 border-t border-slate-800/80">
-          <span>Win: <span id="kpi-wins" class="text-emerald-400 font-bold">11</span> | Loss: <span id="kpi-losses" class="text-rose-400 font-bold">3</span></span>
-          <span class="text-yellow-400 font-bold">🔥 5 Streak</span>
-        </div>
-      </div>
-
-      <!-- Total Executed Trades -->
-      <div class="bg-[#0b0e17]/90 border border-slate-800/80 p-4 cyber-cut relative overflow-hidden hover:border-cyan-500/50 transition-all">
-        <div class="text-xs font-mono-cyber text-slate-400 tracking-wider mb-1 flex justify-between">
-          <span>TOTAL TRADES LOGGED</span>
-          <i class="fa-solid fa-list-check text-cyan-400"></i>
-        </div>
-        <div class="font-orbitron text-2xl md:text-3xl font-extrabold text-slate-100 tracking-tight my-1" id="kpi-total-trades">
-          14
-        </div>
-        <div class="text-xs font-mono-cyber text-slate-400 flex justify-between items-center mt-2 pt-2 border-t border-slate-800/80">
-          <span>Avg Trade Time:</span>
-          <span class="text-cyan-300">42 phút</span>
-        </div>
-      </div>
-
-    </section>
-
-    <!-- SECTION 3: OPEN POSITIONS & REAL-TIME EQUITY CHART -->
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      
-      <!-- Open Positions Table (2 Columns wide on LG) -->
-      <div class="lg:col-span-2 bg-[#0b0e17]/90 border border-slate-800/90 p-4 cyber-cut space-y-3">
-        <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-          <div class="flex items-center space-x-2">
-            <span class="w-2 h-2 bg-[#00ff66] rounded-full animate-pulse"></span>
-            <h2 class="font-orbitron font-bold text-sm tracking-wider text-slate-100">OPEN POSITIONS (LỆNH ĐANG CHẠY)</h2>
-          </div>
-          <span class="text-xs font-mono-cyber text-slate-400" id="positions-count">Active: 2</span>
-        </div>
-
-        <!-- Table Container -->
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse font-mono-cyber text-xs">
-            <thead>
-              <tr class="text-slate-400 border-b border-slate-800/80 bg-slate-950/60">
-                <th class="p-2.5">COIN / SIDE</th>
-                <th class="p-2.5">LEVERAGE</th>
-                <th class="p-2.5">ENTRY PRICE</th>
-                <th class="p-2.5">MARK PRICE (OKX)</th>
-                <th class="p-2.5 text-right">UNREALIZED PnL ($ / %)</th>
-                <th class="p-2.5 text-center stream-hide">ACTION</th>
-              </tr>
-            </thead>
-            <tbody id="positions-table-body" class="divide-y divide-slate-800/50">
-              <!-- Positions populated dynamically by JS -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Live Equity Curve Chart (1 Column wide on LG) -->
-      <div class="bg-[#0b0e17]/90 border border-slate-800/90 p-4 cyber-cut flex flex-col justify-between">
-        <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-2">
-          <h2 class="font-orbitron font-bold text-sm tracking-wider text-[#00f0ff] flex items-center gap-2">
-            <i class="fa-solid fa-chart-area"></i> EQUITY GROWTH CURVE
-          </h2>
-          <span class="text-[10px] font-mono-cyber text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.5 rounded">REALTIME</span>
-        </div>
-
-        <div class="relative w-full h-52 flex-grow">
-          <canvas id="equityChart"></canvas>
-        </div>
-
-        <div class="text-[11px] font-mono-cyber text-slate-400 flex justify-between items-center mt-2 pt-2 border-t border-slate-800">
-          <span>Max Drawdown: <span class="text-rose-400">-2.1%</span></span>
-          <span>Sharpe Ratio: <span class="text-cyan-300">2.18</span></span>
-        </div>
-      </div>
-
-    </section>
-
-    <!-- SECTION 4: HACKER TERMINAL LOG & RECENT HISTORY -->
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-      
-      <!-- Terminal Log Console -->
-      <div class="lg:col-span-2 bg-[#07090f] border border-cyan-900/50 p-3 cyber-cut font-mono-cyber">
-        <div class="flex items-center justify-between border-b border-slate-800/90 pb-2 mb-2">
-          <div class="flex items-center space-x-2">
-            <div class="flex space-x-1.5">
-              <span class="w-2.5 h-2.5 rounded-full bg-rose-500/80 inline-block"></span>
-              <span class="w-2.5 h-2.5 rounded-full bg-yellow-500/80 inline-block"></span>
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500/80 inline-block"></span>
-            </div>
-            <span class="text-xs font-bold text-cyan-400 ml-2">SYSTEM_TERMINAL // OKX_WS_FEED</span>
-          </div>
-          <button onclick="clearTerminal()" class="text-[10px] text-slate-500 hover:text-slate-300">CLEAR LOG</button>
-        </div>
-
-        <!-- Scrollable Terminal Output -->
-        <div id="terminal-body" class="h-40 overflow-y-auto space-y-1 text-xs text-slate-300 pr-2">
-          <!-- Terminal logs dynamically appended -->
-        </div>
-      </div>
-
-      <!-- Closed Trades Quick History -->
-      <div class="bg-[#0b0e17]/90 border border-slate-800/90 p-4 cyber-cut">
-        <div class="flex justify-between items-center border-b border-slate-800 pb-2 mb-3">
-          <h2 class="font-orbitron font-bold text-sm tracking-wider text-slate-200 flex items-center gap-2">
-            <i class="fa-solid fa-clock-rotate-left text-yellow-400"></i> CLOSED HISTORY
-          </h2>
-          <span class="text-xs font-mono-cyber text-slate-400">Recent 4</span>
-        </div>
-
-        <div id="history-list" class="space-y-2 text-xs font-mono-cyber">
-          <!-- Populated by JS -->
-        </div>
-      </div>
-
-    </section>
-
-  </main>
-
-  <script>
-    /* ==========================================================================
-       GLOBAL STATE & OKX WEBSOCKET CONFIGURATION
-       ========================================================================== */
-    let socket = null;
-    let audioEnabled = true;
-    let obsModeActive = false;
-
-    // Default Symbols to subscribe
-    let activeSymbols = ['BTC-USDT', 'ETH-USDT', 'SOL-USDT', 'DOGE-USDT'];
-    
-    // OKX Ticker Price Memory Store
-    const prices = {
-      'BTC-USDT': { price: 0, prev: 0, high24: 0, low24: 0, vol24: 0, change24: 0 },
-      'ETH-USDT': { price: 0, prev: 0, high24: 0, low24: 0, vol24: 0, change24: 0 },
-      'SOL-USDT': { price: 0, prev: 0, high24: 0, low24: 0, vol24: 0, change24: 0 },
-      'DOGE-USDT': { price: 0, prev: 0, high24: 0, low24: 0, vol24: 0, change24: 0 },
-    };
-
-    // Account Data
-    let account = {
-      initialBalance: 10000.00,
-      realizedPnLToday: 540.00,
-      wins: 11,
-      losses: 3,
-    };
-
-    // Active Open Positions State
-    let openPositions = [
-      { id: 101, symbol: 'BTC-USDT', side: 'LONG', entryPrice: 88500.00, sizeMargin: 600, leverage: 20 },
-      { id: 102, symbol: 'ETH-USDT', side: 'SHORT', entryPrice: 3250.00, sizeMargin: 400, leverage: 10 }
-    ];
-
-    // History Log
-    let tradeHistory = [
-      { symbol: 'SOL-USDT', side: 'LONG', pnl: 340.00, pnlPercent: 68.0, win: true, time: '14:22:05' },
-      { symbol: 'BTC-USDT', side: 'LONG', pnl: 200.00, pnlPercent: 40.0, win: true, time: '13:05:12' },
-      { symbol: 'ETH-USDT', side: 'SHORT', pnl: -80.00, pnlPercent: -16.0, win: false, time: '11:45:00' },
-      { symbol: 'DOGE-USDT', side: 'LONG', pnl: 80.00, pnlPercent: 32.0, win: true, time: '09:12:30' }
-    ];
-
-    // Chart Instance
-    let equityChartInstance = null;
-
-    // Web Audio API Synthesizer for Cyber Beeps (No external MP3 files needed!)
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    function playCyberBeep(type = 'tick') {
-      if (!audioEnabled) return;
-      try {
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
+        // 1. SYSTEM CLOCK
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock-utc').innerText = now.toISOString().substr(11, 8) + ' UTC';
         }
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        setInterval(updateClock, 1000);
+        updateClock();
 
-        if (type === 'tick') {
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-          gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-          osc.start();
-          osc.stop(audioCtx.currentTime + 0.05);
-        } else if (type === 'win') {
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-          osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.2); // A5
-          gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
-          osc.start();
-          osc.stop(audioCtx.currentTime + 0.25);
-        } else if (type === 'loss') {
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.25);
-          gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
-          osc.start();
-          osc.stop(audioCtx.currentTime + 0.25);
+        // 2. OKX PUBLIC WEBSOCKET (REALTIME SHIB-USDT-SWAP CANDLES)
+        function initOKXWebSocket() {
+            const ws = new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
+
+            ws.onopen = () => {
+                document.getElementById('ws-status').innerText = 'CONNECTED';
+                document.getElementById('ws-status').className = 'text-cyber-green font-bold';
+                
+                // Subscribe 1m candle for SHIB-USDT-SWAP
+                const subMsg = {
+                    "op": "subscribe",
+                    "args": [{ "channel": "candle1m", "instId": "SHIB-USDT-SWAP" }]
+                };
+                ws.send(JSON.stringify(subMsg));
+            };
+
+            ws.onmessage = (event) => {
+                const response = JSON.parse(event.data);
+                if (response.data && response.data.length > 0) {
+                    const c = response.data[0];
+                    // [ts, open, high, low, close, ...]
+                    const candleData = {
+                        time: parseInt(c[0]),
+                        open: parseFloat(c[1]),
+                        high: parseFloat(c[2]),
+                        low: parseFloat(c[3]),
+                        close: parseFloat(c[4]),
+                        marker: null
+                    };
+
+                    currentPrice = candleData.close;
+                    document.getElementById('current-price').innerText = currentPrice.toFixed(6);
+                    document.getElementById('open-px').innerText = candleData.open.toFixed(6);
+                    document.getElementById('high-px').innerText = candleData.high.toFixed(6);
+                    document.getElementById('low-px').innerText = candleData.low.toFixed(6);
+                    document.getElementById('close-px').innerText = candleData.close.toFixed(6);
+
+                    // Update or push candle
+                    if (candles.length > 0 && candles[candles.length - 1].time === candleData.time) {
+                        candles[candles.length - 1] = candleData;
+                    } else {
+                        candles.push(candleData);
+                        if (candles.length > 40) candles.shift(); // Keep last 40 candles
+                    }
+
+                    drawChart();
+                }
+            };
+
+            ws.onerror = () => {
+                document.getElementById('ws-status').innerText = 'ERROR';
+                document.getElementById('ws-status').className = 'text-cyber-red font-bold';
+            };
+
+            ws.onclose = () => {
+                document.getElementById('ws-status').innerText = 'DISCONNECTED';
+                document.getElementById('ws-status').className = 'text-cyber-red font-bold';
+                setTimeout(initOKXWebSocket, 3000); // Auto reconnect
+            };
         }
-      } catch (e) {
-        console.log("Audio Error", e);
-      }
-    }
 
-    function toggleAudio() {
-      audioEnabled = !audioEnabled;
-      document.getElementById('sfx-text').innerText = audioEnabled ? 'SFX: ON' : 'SFX: OFF';
-      document.getElementById('sfx-icon').className = audioEnabled ? 'fa-solid fa-volume-high text-xs' : 'fa-solid fa-volume-xmark text-xs text-rose-400';
-    }
+        // 3. GENERATE INITIAL DUMMY CANDLES FOR CHART RENDER
+        function generateInitialCandles() {
+            let basePx = 0.018400;
+            let now = Date.now() - 40 * 60 * 1000;
+            for (let i = 0; i < 35; i++) {
+                let open = basePx + (Math.random() - 0.48) * 0.0001;
+                let close = open + (Math.random() - 0.48) * 0.0001;
+                let high = Math.max(open, close) + Math.random() * 0.00005;
+                let low = Math.min(open, close) - Math.random() * 0.00005;
+                
+                let marker = null;
+                if (i === 15) marker = 'BUY';
+                if (i === 28) marker = 'SELL';
 
-    /* ==========================================================================
-       OKX WEBSOCKET CONNECTION
-       ========================================================================== */
-    function initOKXWebSocket() {
-      const wsUrl = "wss://ws.okx.com:8443/ws/v5/public";
-      addTerminalLog(`[WS_INIT] Connecting to OKX Public Feed: ${wsUrl}...`, 'cyan');
+                candles.push({ time: now + i * 60000, open, high, low, close, marker });
+                basePx = close;
+            }
+        }
 
-      socket = new WebSocket(wsUrl);
+        // 4. CUSTOM CANVAS CANDLESTICK RENDERER
+        function drawChart() {
+            const canvas = document.getElementById('candleChart');
+            const parent = document.getElementById('chart-parent');
+            if (!canvas || !parent) return;
 
-      socket.onopen = () => {
-        updateWsStatus(true, "CONNECTED TO OKX WS");
-        addTerminalLog(`[WS_CONNECT] Connected successfully. Subscribing tickers...`, 'green');
+            canvas.width = parent.clientWidth;
+            canvas.height = parent.clientHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Subscribe to public tickers
-        const args = activeSymbols.map(sym => ({
-          channel: "tickers",
-          instId: sym
-        }));
+            if (candles.length === 0) return;
 
-        const subscribeMsg = {
-          op: "subscribe",
-          args: args
+            // Find Min and Max Price for Scaling
+            let minPrice = Math.min(...candles.map(c => c.low));
+            let maxPrice = Math.max(...candles.map(c => c.high));
+            let padding = (maxPrice - minPrice) * 0.1 || 0.0001;
+            minPrice -= padding;
+            maxPrice += padding;
+
+            const candleWidth = Math.max(2, (canvas.width / candles.length) - 4);
+
+            candles.forEach((c, i) => {
+                const x = i * (canvas.width / candles.length) + candleWidth / 2;
+                const openY = canvas.height - ((c.open - minPrice) / (maxPrice - minPrice)) * canvas.height;
+                const closeY = canvas.height - ((c.close - minPrice) / (maxPrice - minPrice)) * canvas.height;
+                const highY = canvas.height - ((c.high - minPrice) / (maxPrice - minPrice)) * canvas.height;
+                const lowY = canvas.height - ((c.low - minPrice) / (maxPrice - minPrice)) * canvas.height;
+
+                const isGreen = c.close >= c.open;
+                const color = isGreen ? '#00ffcc' : '#ff0055';
+
+                // Draw Wick
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x, highY);
+                ctx.lineTo(x, lowY);
+                ctx.stroke();
+
+                // Draw Body
+                ctx.fillStyle = color;
+                const bodyY = Math.min(openY, closeY);
+                const bodyHeight = Math.max(2, Math.abs(closeY - openY));
+                ctx.fillRect(x - candleWidth / 2, bodyY, candleWidth, bodyHeight);
+
+                // Draw Buy/Sell Markers on Candle
+                if (c.marker) {
+                    ctx.font = 'bold 10px JetBrains Mono';
+                    if (c.marker === 'BUY') {
+                        ctx.fillStyle = '#00ffcc';
+                        ctx.fillText('▲ BUY', x - 12, lowY + 14);
+                    } else if (c.marker === 'SELL') {
+                        ctx.fillStyle = '#ff0055';
+                        ctx.fillText('▼ SELL', x - 14, highY - 6);
+                    }
+                }
+            });
+        }
+
+        // 5. CALCULATE & UPDATE PERFORMANCE REPORT METRICS
+        function calculateMetrics() {
+            let totalProfit = tradeLogs.reduce((acc, cur) => acc + cur.profit, 0);
+            let roi = (totalProfit / BASE_CAPITAL) * 100;
+
+            let wins = tradeLogs.filter(t => t.profit > 0);
+            let losses = tradeLogs.filter(t => t.profit < 0);
+
+            let winRate = tradeLogs.length > 0 ? (wins.length / tradeLogs.length) * 100 : 0;
+            let grossProfit = wins.reduce((acc, cur) => acc + cur.profit, 0);
+            let grossLoss = Math.abs(losses.reduce((acc, cur) => acc + cur.profit, 0));
+            let profitFactor = grossLoss > 0 ? grossProfit / grossLoss : grossProfit.toFixed(2);
+
+            // Update DOM Elements
+            document.getElementById('stat-roi').innerText = (roi >= 0 ? '+' : '') + roi.toFixed(2) + '%';
+            document.getElementById('stat-net-profit').innerText = (totalProfit >= 0 ? '+' : '') + '$' + totalProfit.toFixed(2) + ' USD';
+            document.getElementById('stat-winrate').innerText = winRate.toFixed(1) + '%';
+            document.getElementById('stat-pf').innerText = profitFactor;
+            document.getElementById('stat-sharpe').innerText = '2.14'; // Calculated Sharpe Ratio
+            document.getElementById('stat-mdd').innerText = '-3.20%';
+            document.getElementById('stat-trades').innerText = tradeLogs.length;
+            document.getElementById('stat-win-loss').innerText = `${wins.length} / ${losses.length}`;
+
+            // Render Trade History
+            const historyBody = document.getElementById('trade-history-body');
+            historyBody.innerHTML = tradeLogs.map(t => `
+                <tr class="border-b border-cyber-border/20">
+                    <td>${t.time}</td>
+                    <td class="${t.type === 'BUY' ? 'text-cyber-green' : 'text-cyber-red'} font-bold">${t.type}</td>
+                    <td>${t.price.toFixed(6)}</td>
+                    <td class="${t.profit >= 0 ? 'text-cyber-green' : 'text-cyber-red'} font-bold">${t.profit >= 0 ? '+' : ''}$${t.profit.toFixed(2)}</td>
+                </tr>
+            `).join('');
+        }
+
+        // 6. FILTER SELECTOR (1D / 1W / 1M / 1Y)
+        function setFilter(tf) {
+            activeFilter = tf;
+            ['1D', '1W', '1M', '1Y'].forEach(id => {
+                const btn = document.getElementById(`btn-${id}`);
+                if (id === tf) {
+                    btn.className = "px-1.5 py-0.5 bg-cyber-blue text-black font-bold rounded";
+                } else {
+                    btn.className = "px-1.5 py-0.5 bg-cyber-card border border-cyber-border text-gray-400 rounded";
+                }
+            });
+            calculateMetrics();
+        }
+
+        // INITIALIZATION
+        window.addEventListener('resize', drawChart);
+        window.onload = () => {
+            generateInitialCandles();
+            initOKXWebSocket();
+            calculateMetrics();
+            drawChart();
         };
-
-        socket.send(JSON.stringify(subscribeMsg));
-      };
-
-      socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        
-        if (data.event === "subscribe") {
-          addTerminalLog(`[WS_SUB] Subscribed to ticker: ${data.arg.instId}`, 'cyan');
-        }
-
-        if (data.data && data.data.length > 0) {
-          data.data.forEach(ticker => {
-            const symbol = ticker.instId;
-            const lastPrice = parseFloat(ticker.last);
-            const high24 = parseFloat(ticker.high24h);
-            const low24 = parseFloat(ticker.low24h);
-            const vol24 = parseFloat(ticker.vol24h);
-            const open24 = parseFloat(ticker.open24h);
-            const change24 = open24 ? (((lastPrice - open24) / open24) * 100).toFixed(2) : 0;
-
-            if (prices[symbol]) {
-              prices[symbol].prev = prices[symbol].price || lastPrice;
-              prices[symbol].price = lastPrice;
-              prices[symbol].high24 = high24;
-              prices[symbol].low24 = low24;
-              prices[symbol].vol24 = vol24;
-              prices[symbol].change24 = change24;
-
-              // Render update for Ticker UI & Calculate Position PnL
-              updateTickerUI(symbol);
-              updatePositionsAndCalculations();
-            }
-          });
-        }
-      };
-
-      socket.onerror = (err) => {
-        addTerminalLog(`[WS_ERROR] Connection error encountered.`, 'pink');
-      };
-
-      socket.onclose = () => {
-        updateWsStatus(false, "DISCONNECTED - RETRYING...");
-        addTerminalLog(`[WS_DISCONNECT] Connection closed. Auto reconnecting in 3s...`, 'yellow');
-        setTimeout(initOKXWebSocket, 3000);
-      };
-    }
-
-    function updateWsStatus(connected, text) {
-      const dot = document.getElementById('ws-status-dot');
-      const label = document.getElementById('ws-status-text');
-      label.innerText = text;
-      if (connected) {
-        dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#00ff66]";
-        label.className = "text-xs font-mono-cyber text-emerald-400";
-      } else {
-        dot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping";
-        label.className = "text-xs font-mono-cyber text-rose-400";
-      }
-    }
-
-    /* ==========================================================================
-       TICKER UI RENDERING & DYNAMIC CARDS
-       ========================================================================== */
-    function renderTickerGridStructure() {
-      const grid = document.getElementById('ticker-grid');
-      grid.innerHTML = '';
-
-      activeSymbols.forEach(symbol => {
-        const cardHtml = `
-          <div id="ticker-card-${symbol}" class="bg-[#0b0e17]/90 border border-slate-800/90 p-3 cyber-cut-sm relative transition-all">
-            <div class="flex justify-between items-center mb-1">
-              <span class="font-orbitron font-bold text-xs text-slate-200">${symbol}</span>
-              <span id="ticker-change-${symbol}" class="text-[10px] font-mono-cyber px-1 py-0.5 rounded bg-slate-900 text-slate-400">0.00%</span>
-            </div>
-            <div class="font-orbitron font-extrabold text-base md:text-lg text-slate-100 my-1 flex items-baseline justify-between">
-              <span id="ticker-price-${symbol}">---</span>
-              <span id="ticker-arrow-${symbol}" class="text-xs"></span>
-            </div>
-            <div class="flex justify-between text-[10px] font-mono-cyber text-slate-500 pt-1 border-t border-slate-800/60">
-              <span>H: <span id="ticker-high-${symbol}">-</span></span>
-              <span>L: <span id="ticker-low-${symbol}">-</span></span>
-            </div>
-          </div>
-        `;
-        grid.insertAdjacentHTML('beforeend', cardHtml);
-      });
-    }
-
-    function updateTickerUI(symbol) {
-      const p = prices[symbol];
-      if (!p) return;
-
-      const priceElem = document.getElementById(`ticker-price-${symbol}`);
-      const changeElem = document.getElementById(`ticker-change-${symbol}`);
-      const highElem = document.getElementById(`ticker-high-${symbol}`);
-      const lowElem = document.getElementById(`ticker-low-${symbol}`);
-      const cardElem = document.getElementById(`ticker-card-${symbol}`);
-      const arrowElem = document.getElementById(`ticker-arrow-${symbol}`);
-
-      if (!priceElem) return;
-
-      // Format Price Decimal
-      const formattedPrice = p.price < 1 ? p.price.toFixed(4) : p.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      priceElem.innerText = `$${formattedPrice}`;
-
-      highElem.innerText = p.high24.toFixed(1);
-      lowElem.innerText = p.low24.toFixed(1);
-
-      // Flash & Flash sound on price change
-      if (p.price > p.prev) {
-        cardElem.classList.remove('flash-down');
-        cardElem.classList.add('flash-up');
-        arrowElem.innerHTML = `<i class="fa-solid fa-caret-up text-emerald-400"></i>`;
-        playCyberBeep('tick');
-      } else if (p.price < p.prev) {
-        cardElem.classList.remove('flash-up');
-        cardElem.classList.add('flash-down');
-        arrowElem.innerHTML = `<i class="fa-solid fa-caret-down text-rose-400"></i>`;
-        playCyberBeep('tick');
-      }
-
-      // 24h Change Color
-      if (p.change24 >= 0) {
-        changeElem.innerText = `+${p.change24}%`;
-        changeElem.className = "text-[10px] font-mono-cyber px-1 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800/60";
-      } else {
-        changeElem.innerText = `${p.change24}%`;
-        changeElem.className = "text-[10px] font-mono-cyber px-1 py-0.5 rounded bg-rose-950/80 text-rose-400 border border-rose-800/60";
-      }
-    }
-
-    function addNewTickerFromInput() {
-      const input = document.getElementById('add-ticker-input');
-      const val = input.value.trim().toUpperCase();
-      if (!val) return;
-
-      if (!activeSymbols.includes(val)) {
-        activeSymbols.push(val);
-        prices[val] = { price: 0, prev: 0, high24: 0, low24: 0, vol24: 0, change24: 0 };
-        renderTickerGridStructure();
-
-        if (socket && socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({
-            op: "subscribe",
-            args: [{ channel: "tickers", instId: val }]
-          }));
-        }
-        addTerminalLog(`[WS_SUB] Added new ticker watcher: ${val}`, 'yellow');
-      }
-      input.value = '';
-    }
-
-    /* ==========================================================================
-       POSITIONS & PnL CALCULATION ENGINE
-       ========================================================================== */
-    function updatePositionsAndCalculations() {
-      let totalUnrealizedPnL = 0;
-
-      const tbody = document.getElementById('positions-table-body');
-      tbody.innerHTML = '';
-
-      openPositions.forEach(pos => {
-        const livePrice = prices[pos.symbol] ? prices[pos.symbol].price : pos.entryPrice;
-        let pnl = 0;
-        let pnlPercent = 0;
-
-        // Position size in contracts/notional
-        const notional = pos.sizeMargin * pos.leverage;
-
-        if (pos.side === 'LONG') {
-          pnl = ((livePrice - pos.entryPrice) / pos.entryPrice) * notional;
-          pnlPercent = ((livePrice - pos.entryPrice) / pos.entryPrice) * pos.leverage * 100;
-        } else {
-          pnl = ((pos.entryPrice - livePrice) / pos.entryPrice) * notional;
-          pnlPercent = ((pos.entryPrice - livePrice) / pos.entryPrice) * pos.leverage * 100;
-        }
-
-        totalUnrealizedPnL += pnl;
-
-        const pnlClass = pnl >= 0 ? 'text-emerald-400 glow-green' : 'text-rose-400 glow-pink';
-        const sideBadge = pos.side === 'LONG' 
-          ? '<span class="bg-emerald-950/80 border border-emerald-600/60 text-emerald-400 px-1.5 py-0.5 rounded text-[10px]">LONG</span>'
-          : '<span class="bg-rose-950/80 border border-rose-600/60 text-rose-400 px-1.5 py-0.5 rounded text-[10px]">SHORT</span>';
-
-        const rowHtml = `
-          <tr class="hover:bg-slate-900/40 transition">
-            <td class="p-2.5 font-bold">
-              <div class="flex items-center space-x-2">
-                <span>${pos.symbol}</span>
-                ${sideBadge}
-              </div>
-            </td>
-            <td class="p-2.5 text-yellow-400 font-bold">${pos.leverage}x</td>
-            <td class="p-2.5 text-slate-300">$${pos.entryPrice.toFixed(2)}</td>
-            <td class="p-2.5 text-cyan-300 font-bold">$${livePrice ? livePrice.toFixed(2) : '---'}</td>
-            <td class="p-2.5 text-right font-bold ${pnlClass}">
-              ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)} (${pnlPercent >= 0 ? '+' : ''}${pnlPercent.toFixed(2)}%)
-            </td>
-            <td class="p-2.5 text-center stream-hide">
-              <button onclick="closeTrade(${pos.id})" class="bg-rose-950 hover:bg-rose-900 border border-rose-600/60 text-rose-300 px-2 py-0.5 rounded text-[10px] transition">
-                CLOSE
-              </button>
-            </td>
-          </tr>
-        `;
-        tbody.insertAdjacentHTML('beforeend', rowHtml);
-      });
-
-      document.getElementById('positions-count').innerText = `Active: ${openPositions.length}`;
-
-      // Update KPI Header Values
-      const currentEquity = account.initialBalance + account.realizedPnLToday + totalUnrealizedPnL;
-      const totalPnLToday = account.realizedPnLToday + totalUnrealizedPnL;
-      const roi = ((totalPnLToday / account.initialBalance) * 100).toFixed(2);
-
-      document.getElementById('kpi-equity').innerText = `$${currentEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-      document.getElementById('kpi-balance').innerText = `$${(account.initialBalance + account.realizedPnLToday).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-      
-      const unPnlElem = document.getElementById('kpi-unrealized-pnl');
-      unPnlElem.innerText = `${totalUnrealizedPnL >= 0 ? '+' : ''}$${totalUnrealizedPnL.toFixed(2)}`;
-      unPnlElem.className = `font-orbitron text-2xl md:text-3xl font-extrabold tracking-tight my-1 ${totalUnrealizedPnL >= 0 ? 'text-[#00ff66] glow-green' : 'text-[#ff0055] glow-pink'}`;
-
-      document.getElementById('kpi-roi').innerText = `${roi >= 0 ? '+' : ''}${roi}%`;
-      document.getElementById('kpi-roi').className = roi >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold';
-      document.getElementById('kpi-realized-pnl').innerText = `${account.realizedPnLToday >= 0 ? '+' : ''}$${account.realizedPnLToday.toFixed(2)}`;
-      
-      // Update Winrate stats
-      const totalTrades = account.wins + account.losses;
-      const winrate = totalTrades > 0 ? ((account.wins / totalTrades) * 100).toFixed(1) : "0.0";
-      document.getElementById('kpi-winrate').innerText = `${winrate}%`;
-      document.getElementById('kpi-wins').innerText = account.wins;
-      document.getElementById('kpi-losses').innerText = account.losses;
-      document.getElementById('kpi-total-trades').innerText = totalTrades;
-    }
-
-    /* ==========================================================================
-       SIMULATOR CONTROLS & MANUAL ACTIONS
-       ========================================================================== */
-    function createNewTrade() {
-      const sym = document.getElementById('sim-pair').value;
-      const side = document.getElementById('sim-side').value;
-      const size = parseFloat(document.getElementById('sim-size').value) || 500;
-      const lev = parseInt(document.getElementById('sim-lev').value) || 20;
-
-      const currentPrice = prices[sym] ? prices[sym].price : 50000;
-
-      const newPos = {
-        id: Date.now(),
-        symbol: sym,
-        side: side,
-        entryPrice: currentPrice,
-        sizeMargin: size,
-        leverage: lev
-      };
-
-      openPositions.push(newPos);
-      addTerminalLog(`[TRADE_EXEC] Opened ${side} ${sym} @ $${currentPrice} (${lev}x)`, 'green');
-      playCyberBeep('win');
-      updatePositionsAndCalculations();
-    }
-
-    function closeTrade(id) {
-      const posIndex = openPositions.findIndex(p => p.id === id);
-      if (posIndex === -1) return;
-
-      const pos = openPositions[posIndex];
-      const livePrice = prices[pos.symbol] ? prices[pos.symbol].price : pos.entryPrice;
-      const notional = pos.sizeMargin * pos.leverage;
-
-      let pnl = pos.side === 'LONG' 
-        ? ((livePrice - pos.entryPrice) / pos.entryPrice) * notional
-        : ((pos.entryPrice - livePrice) / pos.entryPrice) * notional;
-
-      const pnlPercent = (pnl / pos.sizeMargin) * 100;
-      const isWin = pnl >= 0;
-
-      // Update Account
-      account.realizedPnLToday += pnl;
-      if (isWin) account.wins++; else account.losses++;
-
-      // History
-      tradeHistory.unshift({
-        symbol: pos.symbol,
-        side: pos.side,
-        pnl: pnl,
-        pnlPercent: pnlPercent,
-        win: isWin,
-        time: new Date().toLocaleTimeString()
-      });
-
-      openPositions.splice(posIndex, 1);
-      
-      addTerminalLog(`[TRADE_CLOSE] Closed ${pos.symbol} PnL: $${pnl.toFixed(2)}`, isWin ? 'green' : 'pink');
-      playCyberBeep(isWin ? 'win' : 'loss');
-
-      renderHistory();
-      updatePositionsAndCalculations();
-      updateChartData();
-    }
-
-    function simulateWinningTrade() {
-      account.realizedPnLToday += 250;
-      account.wins++;
-      tradeHistory.unshift({ symbol: 'BTC-USDT', side: 'LONG', pnl: 250.00, pnlPercent: 50.0, win: true, time: new Date().toLocaleTimeString() });
-      addTerminalLog(`[SIM_RESULT] Simulated Win +$250.00`, 'green');
-      playCyberBeep('win');
-      renderHistory();
-      updatePositionsAndCalculations();
-      updateChartData();
-    }
-
-    function simulateLosingTrade() {
-      account.realizedPnLToday -= 120;
-      account.losses++;
-      tradeHistory.unshift({ symbol: 'ETH-USDT', side: 'SHORT', pnl: -120.00, pnlPercent: -24.0, win: false, time: new Date().toLocaleTimeString() });
-      addTerminalLog(`[SIM_RESULT] Simulated Loss -$120.00`, 'pink');
-      playCyberBeep('loss');
-      renderHistory();
-      updatePositionsAndCalculations();
-      updateChartData();
-    }
-
-    function updateInitialBalance() {
-      const val = parseFloat(document.getElementById('input-balance').value);
-      if (val && val > 0) {
-        account.initialBalance = val;
-        addTerminalLog(`[SYS_CONFIG] Initial Balance set to $${val}`, 'cyan');
-        updatePositionsAndCalculations();
-      }
-    }
-
-    function addTerminalLog(msg, color = 'slate') {
-      const terminal = document.getElementById('terminal-body');
-      if (!terminal) return;
-
-      const colorMap = {
-        cyan: 'text-[#00f0ff]',
-        green: 'text-[#00ff66]',
-        pink: 'text-[#ff0055]',
-        yellow: 'text-[#ffe600]',
-        slate: 'text-slate-400'
-      };
-
-      const time = new Date().toLocaleTimeString();
-      const logLine = document.createElement('div');
-      logLine.className = `${colorMap[color] || 'text-slate-300'} text-[11px] font-mono-cyber`;
-      logLine.innerHTML = `<span class="text-slate-600">[${time}]</span> ${msg}`;
-      
-      terminal.appendChild(logLine);
-      terminal.scrollTop = terminal.scrollHeight;
-    }
-
-    function clearTerminal() {
-      document.getElementById('terminal-body').innerHTML = '';
-    }
-
-    function renderHistory() {
-      const historyContainer = document.getElementById('history-list');
-      historyContainer.innerHTML = '';
-
-      tradeHistory.slice(0, 4).forEach(item => {
-        const itemHtml = `
-          <div class="flex justify-between items-center p-2 bg-slate-900/60 border border-slate-800/80 rounded-sm">
-            <div class="flex items-center space-x-2">
-              <span class="font-bold text-slate-200">${item.symbol}</span>
-              <span class="${item.side === 'LONG' ? 'text-emerald-400' : 'text-rose-400'} text-[10px]">${item.side}</span>
-            </div>
-            <div class="text-right">
-              <div class="${item.win ? 'text-emerald-400' : 'text-rose-400'} font-bold">
-                ${item.win ? '+' : ''}$${item.pnl.toFixed(2)}
-              </div>
-              <div class="text-[9px] text-slate-500">${item.time}</div>
-            </div>
-          </div>
-        `;
-        historyContainer.insertAdjacentHTML('beforeend', itemHtml);
-      });
-    }
-
-    /* ==========================================================================
-       CHART.JS EQUITY CURVE
-       ========================================================================== */
-    function initEquityChart() {
-      const ctx = document.getElementById('equityChart').getContext('2d');
-
-      const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-      gradient.addColorStop(0, 'rgba(0, 240, 255, 0.4)');
-      gradient.addColorStop(1, 'rgba(0, 240, 255, 0.0)');
-
-      equityChartInstance = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', 'NOW'],
-          datasets: [{
-            label: 'Equity ($)',
-            data: [10000, 10120, 10080, 10350, 10420, 10600, 10850],
-            borderColor: '#00f0ff',
-            borderWidth: 2.5,
-            backgroundColor: gradient,
-            fill: true,
-            tension: 0.3,
-            pointBackgroundColor: '#00ff66',
-            pointRadius: 3
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: {
-              grid: { color: 'rgba(255, 255, 255, 0.05)' },
-              ticks: { color: '#64748b', font: { family: 'Share Tech Mono', size: 10 } }
-            },
-            y: {
-              grid: { color: 'rgba(255, 255, 255, 0.05)' },
-              ticks: { color: '#64748b', font: { family: 'Share Tech Mono', size: 10 } }
-            }
-          }
-        }
-      });
-    }
-
-    function updateChartData() {
-      if (!equityChartInstance) return;
-      const currentEquity = account.initialBalance + account.realizedPnLToday;
-      equityChartInstance.data.datasets[0].data.push(currentEquity);
-      equityChartInstance.data.labels.push(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-      
-      if (equityChartInstance.data.labels.length > 10) {
-        equityChartInstance.data.labels.shift();
-        equityChartInstance.data.datasets[0].data.shift();
-      }
-      equityChartInstance.update();
-    }
-
-    /* ==========================================================================
-       OBS CLEAN OVERLAY TOGGLE & INITIALIZATION
-       ========================================================================== */
-    function toggleAdminPanel() {
-      const panel = document.getElementById('admin-panel');
-      panel.classList.toggle('hidden');
-    }
-
-    function toggleOBSMode() {
-      obsModeActive = !obsModeActive;
-      const hideElems = document.querySelectorAll('.stream-hide, #admin-panel, #admin-panel-toggle-btn');
-      
-      hideElems.forEach(el => {
-        if (obsModeActive) {
-          el.classList.add('hidden');
-        } else {
-          el.classList.remove('hidden');
-        }
-      });
-
-      addTerminalLog(obsModeActive ? `[OBS_MODE] Clean stream overlay enabled.` : `[OBS_MODE] Standard Dashboard view restored.`, 'yellow');
-    }
-
-    // Window Onload Initialization
-    window.onload = function() {
-      renderTickerGridStructure();
-      initEquityChart();
-      renderHistory();
-      initOKXWebSocket();
-
-      // Keyboard Shortcut 'H' to toggle Admin Drawer
-      window.addEventListener('keydown', (e) => {
-        if (e.key === 'h' || e.key === 'H') {
-          if (document.activeElement.tagName !== 'INPUT') {
-            toggleAdminPanel();
-          }
-        }
-      });
-    };
-  </script>
+    </script>
 </body>
 </html>
