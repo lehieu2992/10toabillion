@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SHIB/USDT SWAP - CYBER TRADING HUD DASHBOARD</title>
+    <title>SHIB/USDT SWAP - 10 ti a billion TRADING HUD DASHBOARD</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Orbitron & JetBrains Mono -->
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,500;0,800;1,400&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- CryptoJS for OKX Private WS HMAC Authentication -->
+    <!-- CryptoJS for OKX API Sign -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
     <script>
@@ -50,28 +50,22 @@
             background-size: 100% 100%, 30px 30px, 30px 30px;
         }
         .cyber-panel {
-            background: rgba(10, 15, 36, 0.75);
+            background: rgba(10, 15, 36, 0.85);
             backdrop-filter: blur(8px);
             border: 1px solid rgba(0, 153, 255, 0.2);
             position: relative;
         }
         .cyber-panel::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 6px; height: 6px;
-            border-top: 2px solid #00ffcc;
-            border-left: 2px solid #00ffcc;
+            content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 6px;
+            border-top: 2px solid #00ffcc; border-left: 2px solid #00ffcc;
         }
         .cyber-panel::after {
-            content: '';
-            position: absolute;
-            bottom: 0; right: 0; width: 6px; height: 6px;
-            border-bottom: 2px solid #00ffcc;
-            border-right: 2px solid #00ffcc;
+            content: ''; position: absolute; bottom: 0; right: 0; width: 6px; height: 6px;
+            border-bottom: 2px solid #00ffcc; border-right: 2px solid #00ffcc;
         }
         .glow-text-green { text-shadow: 0 0 8px rgba(0, 255, 204, 0.6); }
         .glow-text-red { text-shadow: 0 0 8px rgba(255, 0, 85, 0.6); }
-        .glow-text-blue { text-shadow: 0 0 8px rgba(0, 153, 255, 0.6); }
+        .glow-text-yellow { text-shadow: 0 0 8px rgba(255, 204, 0, 0.6); }
 
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: #050811; }
@@ -86,32 +80,37 @@
         <div class="flex items-center space-x-3">
             <div class="w-3 h-3 rounded-full bg-cyber-green animate-ping"></div>
             <h1 class="font-orbitron font-black text-xl md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-cyber-green via-cyber-blue to-cyber-purple tracking-wider">
-                CYBER<span class="text-white">BOT</span> HUD v4.2
+                10 to a billion<span class="text-white">BOT</span> HUD v5.1
             </h1>
             <span class="bg-cyber-blue/20 text-cyber-blue border border-cyber-blue/40 px-2 py-0.5 text-xs font-mono rounded">
-                SHIB-USDT-SWAP [1M]
+                OKX: SHIB-USDT-SWAP
             </span>
         </div>
 
-        <!-- LIVE PRICE & SYSTEM TIMERS -->
-        <div class="flex items-center space-x-6 text-xs md:text-sm">
+        <!-- REALTIME PRICE & ACCOUNT BALANCE OVERVIEW -->
+        <div class="flex items-center space-x-6 text-xs md:text-sm mt-2 md:mt-0">
+            <div class="flex flex-col text-right border-r border-cyber-border pr-4">
+                <span class="text-gray-400 text-[10px]">CURRENT BALANCE (USDT)</span>
+                <span id="current-balance" class="font-bold text-lg font-mono text-cyber-yellow glow-text-yellow">
+                    $0.00
+                </span>
+            </div>
+
             <div class="flex flex-col text-right">
-                <span class="text-gray-400 text-[10px]">SHIB REALTIME PRICE</span>
+                <span class="text-gray-400 text-[10px]">SHIB LIVE PRICE</span>
                 <span id="current-price" class="font-bold text-lg font-mono text-cyber-green glow-text-green">
                     0.00000000
                 </span>
             </div>
+
             <div class="hidden sm:flex flex-col text-right border-l border-cyber-border pl-4">
                 <span class="text-gray-400 text-[10px]">SYSTEM TIME (UTC)</span>
                 <span id="clock-utc" class="font-mono text-gray-200">00:00:00 UTC</span>
             </div>
+            
             <div class="flex flex-col text-right border-l border-cyber-border pl-4">
-                <span class="text-gray-400 text-[10px]">PUBLIC FEED</span>
-                <span id="ws-status" class="text-cyber-green font-bold">CONNECTING...</span>
-            </div>
-            <div class="flex flex-col text-right border-l border-cyber-border pl-4">
-                <span class="text-gray-400 text-[10px]">PRIVATE API</span>
-                <span id="private-ws-status" class="text-cyber-yellow font-bold">UNCONFIGURED</span>
+                <span class="text-gray-400 text-[10px]">API STATUS</span>
+                <span id="api-status" class="text-cyber-yellow font-bold">CONNECTING...</span>
             </div>
         </div>
     </header>
@@ -119,94 +118,100 @@
     <!-- MAIN GRID CONTAINER -->
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-3 flex-grow">
 
-        <!-- LEFT COLUMN: LIVE CANDLESTICK CHART (3 COLS) -->
+        <!-- LEFT COLUMN: TRADINGVIEW LIVE CHART (3 COLS) -->
         <div class="lg:col-span-3 flex flex-col space-y-3">
             
-            <!-- LIVE CHART CONTAINER -->
-            <div class="cyber-panel p-3 flex-grow flex flex-col min-h-[380px] relative">
-                <div class="flex justify-between items-center mb-2 border-b border-cyber-border/50 pb-2">
+            <!-- TRADINGVIEW EMBEDDED REALTIME CHART WITH OVERLAY MARKERS -->
+            <div class="cyber-panel p-2 flex-grow flex flex-col min-h-[460px] relative overflow-hidden">
+                <div class="flex justify-between items-center mb-1 pb-1 border-b border-cyber-border/50">
                     <div class="flex items-center space-x-2">
                         <i class="fa-solid fa-chart-line text-cyber-green"></i>
-                        <span class="font-orbitron text-xs font-bold text-cyber-green tracking-wider">OKX REALTIME CANDLESTICK (1M)</span>
+                        <span class="font-orbitron text-xs font-bold text-cyber-green tracking-wider">OKX LIVE TRADINGVIEW CHART</span>
                     </div>
-                    <div class="flex items-center space-x-4 text-[11px] text-gray-400 font-mono">
-                        <span>O: <span id="open-px" class="text-white">0.0000</span></span>
-                        <span>H: <span id="high-px" class="text-cyber-green">0.0000</span></span>
-                        <span>L: <span id="low-px" class="text-cyber-red">0.0000</span></span>
-                        <span>C: <span id="close-px" class="text-white">0.0000</span></span>
+                    <!-- RECENT ENTRY BADGES OVERLAY HEADER -->
+                    <div class="flex space-x-2 text-[10px]" id="chart-trade-markers">
+                        <span class="bg-cyber-green/20 text-cyber-green border border-cyber-green/40 px-1.5 py-0.5 rounded font-bold">
+                            <i class="fa-solid fa-arrow-trend-up mr-1"></i>LAST LONG ENTRY
+                        </span>
                     </div>
                 </div>
 
-                <!-- CANVAS FOR CUSTOM CANDLESTICK DRAWING -->
-                <div class="relative flex-grow w-full h-full min-h-[300px]" id="chart-parent">
-                    <canvas id="candleChart" class="absolute inset-0 w-full h-full"></canvas>
-                </div>
+                <!-- TRADINGVIEW WIDGET CONTAINER -->
+                <div class="w-full h-full flex-grow min-h-[400px] relative" id="tradingview_widget_container">
+                    <div id="tradingview_chart" class="w-full h-full min-h-[400px]"></div>
 
-                <!-- CHART LEGEND & MARKER INDICATOR -->
-                <div class="flex justify-between items-center mt-2 text-[10px] text-gray-400 border-t border-cyber-border/30 pt-1">
-                    <div class="flex space-x-3">
-                        <span class="flex items-center"><span class="w-2 h-2 bg-cyber-green inline-block mr-1"></span> BUY MARKER</span>
-                        <span class="flex items-center"><span class="w-2 h-2 bg-cyber-red inline-block mr-1"></span> SELL MARKER</span>
+                    <!-- HUD TRADE MARKERS OVERLAY -->
+                    <div id="chart-overlay-info" class="absolute bottom-3 left-3 z-10 bg-cyber-card/90 border border-cyber-blue/40 p-2 rounded backdrop-blur text-[11px] font-mono space-y-1 shadow-lg">
+                        <div class="text-cyber-blue font-bold border-b border-cyber-border pb-1">
+                            <i class="fa-solid fa-tag mr-1"></i> ACTIVE EXECUTIONS ON CHART
+                        </div>
+                        <div id="overlay-entries-list" class="space-y-1">
+                            <div class="flex justify-between space-x-4 text-cyber-green">
+                                <span>▲ BUY (LONG) @ Entry</span>
+                                <span class="font-bold" id="overlay-long-entry">Syncing...</span>
+                            </div>
+                        </div>
                     </div>
-                    <span>INITIAL BASE CAPITAL: <strong class="text-cyber-yellow">$10.00 USD</strong></span>
                 </div>
             </div>
 
-            <!-- LOWER GRID: OPEN POSITION & TRADE HISTORY -->
+            <!-- LOWER GRID: OPEN POSITIONS & DETAILED TRADE HISTORY -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 
-                <!-- OPEN POSITIONS -->
-                <div class="cyber-panel p-3 flex flex-col h-48">
+                <!-- REAL OPEN POSITIONS (LONG / SHORT DETAILED) -->
+                <div class="cyber-panel p-3 flex flex-col h-56">
                     <div class="flex justify-between items-center mb-2 border-b border-cyber-border pb-1">
                         <span class="font-orbitron text-xs font-bold text-cyber-blue">
-                            <i class="fa-solid fa-crosshairs mr-1"></i> OPEN POSITION
+                            <i class="fa-solid fa-crosshairs mr-1"></i> ACTIVE POSITIONS (REAL OKX DATA)
                         </span>
-                        <span id="pos-side" class="text-[10px] bg-cyber-green/20 text-cyber-green px-1.5 py-0.5 border border-cyber-green/40">LONG 20X</span>
+                        <span id="pos-status-badge" class="text-[10px] bg-cyber-card text-gray-400 px-1.5 py-0.5 border border-cyber-border">NO POSITION</span>
                     </div>
                     <div class="flex-grow overflow-x-auto text-xs font-mono">
                         <table class="w-full text-left">
                             <thead class="text-gray-500 text-[10px] border-b border-cyber-border">
                                 <tr>
-                                    <th>PAIR</th>
+                                    <th>SIDE</th>
+                                    <th>LEVERAGE</th>
+                                    <th>SIZE</th>
                                     <th>ENTRY</th>
                                     <th>MARK</th>
                                     <th>MARGIN</th>
-                                    <th>PNL ($)</th>
+                                    <th>UNREALIZED PNL</th>
                                 </tr>
                             </thead>
                             <tbody id="position-table-body">
-                                <tr class="border-b border-cyber-border/30 text-[11px]">
-                                    <td class="text-cyber-green font-bold">SHIB-SWAP</td>
-                                    <td>0.018420</td>
-                                    <td id="pos-mark-px">0.018450</td>
-                                    <td>$10.00</td>
-                                    <td id="pos-pnl" class="text-cyber-green font-bold glow-text-green">+$0.32 (+3.2%)</td>
+                                <tr>
+                                    <td colspan="7" class="text-center py-6 text-gray-500">Đang đồng bộ vị thế từ tài khoản OKX thực tế...</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- TRADE HISTORY (REALIZED PNL) -->
-                <div class="cyber-panel p-3 flex flex-col h-48">
+                <!-- DETAILED REAL TRADE HISTORY -->
+                <div class="cyber-panel p-3 flex flex-col h-56">
                     <div class="flex justify-between items-center mb-2 border-b border-cyber-border pb-1">
                         <span class="font-orbitron text-xs font-bold text-cyber-yellow">
-                            <i class="fa-solid fa-clock-rotate-left mr-1"></i> RECENT TRADES
+                            <i class="fa-solid fa-clock-rotate-left mr-1"></i> RECENT TRADES (OKX FILLED)
                         </span>
-                        <span class="text-[10px] text-gray-400">LIVE API ORDERS</span>
+                        <span class="text-[10px] text-gray-400">REALTIME API</span>
                     </div>
                     <div class="flex-grow overflow-y-auto text-xs font-mono">
                         <table class="w-full text-left">
                             <thead class="text-gray-500 text-[10px] border-b border-cyber-border">
                                 <tr>
                                     <th>TIME</th>
-                                    <th>TYPE</th>
+                                    <th>SIDE</th>
+                                    <th>SIZE</th>
                                     <th>PRICE</th>
-                                    <th>PROFIT</th>
+                                    <th>LEVERAGE</th>
+                                    <th>PNL ($)</th>
                                 </tr>
                             </thead>
                             <tbody id="trade-history-body" class="text-[11px]">
-                                <!-- Dynamic trade logs from API -->
+                                <tr>
+                                    <td colspan="6" class="text-center py-6 text-gray-500">Đang tải lịch sử giao dịch thật...</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -215,7 +220,7 @@
             </div>
         </div>
 
-        <!-- RIGHT COLUMN: ANALYTICS REPORT & SUBSCRIBERS (1 COL) -->
+        <!-- RIGHT COLUMN: ANALYTICS & CONTACT -->
         <div class="flex flex-col space-y-3">
             
             <!-- MULTI-TIMEFRAME PERFORMANCE REPORT -->
@@ -224,18 +229,12 @@
                     <span class="font-orbitron text-xs font-bold text-cyber-purple">
                         <i class="fa-solid fa-chart-pie mr-1"></i> PERFORMANCE METRICS
                     </span>
-                    <!-- TIMEFRAME SELECTOR -->
-                    <div class="flex text-[10px] space-x-1 font-mono">
-                        <button onclick="setFilter('1D')" id="btn-1D" class="px-1.5 py-0.5 bg-cyber-blue text-black font-bold rounded">1D</button>
-                        <button onclick="setFilter('1W')" id="btn-1W" class="px-1.5 py-0.5 bg-cyber-card border border-cyber-border text-gray-400 rounded">1W</button>
-                        <button onclick="setFilter('1M')" id="btn-1M" class="px-1.5 py-0.5 bg-cyber-card border border-cyber-border text-gray-400 rounded">1M</button>
-                        <button onclick="setFilter('1Y')" id="btn-1Y" class="px-1.5 py-0.5 bg-cyber-card border border-cyber-border text-gray-400 rounded">1Y</button>
-                    </div>
+                    <span class="text-[10px] text-gray-400 font-mono">BASE: $10.00</span>
                 </div>
 
                 <!-- ROI BASED ON $10 CAPITAL -->
                 <div class="bg-cyber-card/80 border border-cyber-green/30 p-2.5 rounded mb-3 text-center relative overflow-hidden">
-                    <div class="text-[10px] text-gray-400 mb-0.5">CURRENT ROI (START CAPITAL: $10.00)</div>
+                    <div class="text-[10px] text-gray-400 mb-0.5">ACCUMULATED REALIZED ROI</div>
                     <div id="stat-roi" class="font-orbitron font-black text-2xl text-cyber-green glow-text-green">+0.00%</div>
                     <div id="stat-net-profit" class="text-xs text-cyber-green mt-0.5 font-bold">+$0.00 USD</div>
                 </div>
@@ -251,14 +250,6 @@
                         <span id="stat-pf" class="font-bold text-cyber-yellow">0.00</span>
                     </div>
                     <div class="bg-cyber-card/50 p-2 border border-cyber-border/50 rounded">
-                        <span class="text-[10px] text-gray-400 block">SHARPE RATIO</span>
-                        <span id="stat-sharpe" class="font-bold text-cyber-blue">0.00</span>
-                    </div>
-                    <div class="bg-cyber-card/50 p-2 border border-cyber-border/50 rounded">
-                        <span class="text-[10px] text-gray-400 block">MAX DRAWDOWN</span>
-                        <span id="stat-mdd" class="font-bold text-cyber-red">-0.00%</span>
-                    </div>
-                    <div class="bg-cyber-card/50 p-2 border border-cyber-border/50 rounded">
                         <span class="text-[10px] text-gray-400 block">TOTAL TRADES</span>
                         <span id="stat-trades" class="font-bold text-white">0</span>
                     </div>
@@ -270,53 +261,50 @@
             </div>
 
             <!-- BOT SUBSCRIBERS LIST -->
-            <div class="cyber-panel p-3 flex-grow flex flex-col">
+            <div class="cyber-panel p-3 flex flex-col">
                 <div class="flex justify-between items-center mb-2 border-b border-cyber-border pb-1">
                     <span class="font-orbitron text-xs font-bold text-cyber-green">
                         <i class="fa-solid fa-users text-cyber-green mr-1"></i> BOT SUBSCRIBERS
                     </span>
                     <span class="text-[10px] text-cyber-blue font-mono">ACTIVE (4)</span>
                 </div>
-                <div class="space-y-2 overflow-y-auto max-h-56 text-xs font-mono">
+                <div class="space-y-2 overflow-y-auto max-h-40 text-xs font-mono">
                     <div class="p-2 bg-cyber-card/60 border border-cyber-border/40 rounded flex justify-between items-center">
                         <div>
-                            <div class="font-bold text-gray-200">Alpha_Fund_SG</div>
-                            <div class="text-[10px] text-gray-500">Allocated: $500.00</div>
+                            <div class="font-bold text-gray-200">ThanhTung</div>
+                            <div class="text-[10px] text-gray-500">Allocated: $118.00</div>
                         </div>
                         <div class="text-right">
                             <div class="text-cyber-green font-bold">+18.4%</div>
-                            <div class="text-[9px] text-gray-400">RUNNING</div>
                         </div>
                     </div>
                     <div class="p-2 bg-cyber-card/60 border border-cyber-border/40 rounded flex justify-between items-center">
                         <div>
-                            <div class="font-bold text-gray-200">CyberTrader_99</div>
-                            <div class="text-[10px] text-gray-500">Allocated: $250.00</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-cyber-green font-bold">+12.1%</div>
-                            <div class="text-[9px] text-gray-400">RUNNING</div>
-                        </div>
-                    </div>
-                    <div class="p-2 bg-cyber-card/60 border border-cyber-border/40 rounded flex justify-between items-center">
-                        <div>
-                            <div class="font-bold text-gray-200">K-Invest_VN</div>
-                            <div class="text-[10px] text-gray-500">Allocated: $1,000.00</div>
+                            <div class="font-bold text-gray-200">HuuNhan</div>
+                            <div class="text-[10px] text-gray-500">Allocated: $80.00</div>
                         </div>
                         <div class="text-right">
                             <div class="text-cyber-green font-bold">+24.8%</div>
-                            <div class="text-[9px] text-gray-400">RUNNING</div>
                         </div>
                     </div>
-                    <div class="p-2 bg-cyber-card/60 border border-cyber-border/40 rounded flex justify-between items-center">
-                        <div>
-                            <div class="font-bold text-gray-200">Satoshi_HN</div>
-                            <div class="text-[10px] text-gray-500">Allocated: $100.00</div>
-                        </div>
-                        <div class="text-right">
-                            <div class="text-cyber-green font-bold">+8.5%</div>
-                            <div class="text-[9px] text-gray-400">RUNNING</div>
-                        </div>
+                </div>
+            </div>
+
+            <!-- CONTACT & SPONSORSHIP CARD -->
+            <div class="cyber-panel p-3 border-cyber-purple/50 bg-gradient-to-b from-cyber-card to-cyber-bg">
+                <div class="flex items-center space-x-2 mb-2 border-b border-cyber-border pb-1">
+                    <i class="fa-solid fa-handshake-angle text-cyber-purple"></i>
+                    <span class="font-orbitron text-xs font-bold text-cyber-purple">LIÊN HỆ CỘNG TÁC / THUÊ BOT</span>
+                </div>
+                <div class="text-xs font-mono space-y-2">
+                    <p class="text-gray-400 text-[11px]">Cung cấp giải pháp Trading Bot tự động cho OKX/Binance. Hợp tác đầu tư Copytrade:</p>
+                    <div class="bg-cyber-bg p-2 rounded border border-cyber-border flex items-center justify-between">
+                        <span class="text-gray-400"><i class="fa-solid fa-envelope text-cyber-blue mr-1"></i> Email:</span>
+                        <a href="mailto:lehieu2992@gmail.com" class="text-cyber-green hover:underline font-bold">lehieu2992@gmail.com</a>
+                    </div>
+                    <div class="bg-cyber-bg p-2 rounded border border-cyber-border flex items-center justify-between">
+                        <span class="text-gray-400"><i class="fa-paper-plane text-cyber-blue mr-1"></i> Telegram:</span>
+                        <a href="https://t.me/lehieu2992" target="_blank" class="text-cyber-blue hover:underline font-bold">@lehieu2992</a>
                     </div>
                 </div>
             </div>
@@ -328,7 +316,7 @@
     <!-- FOOTER STREAM OVERLAY -->
     <footer class="mt-3 cyber-panel p-2 flex flex-wrap justify-between items-center text-[11px] text-gray-400 font-mono">
         <div class="flex items-center space-x-4">
-            <span><i class="fa-solid fa-server text-cyber-blue mr-1"></i> OKX WS: <strong class="text-cyber-green">CONNECTED</strong></span>
+            <span><i class="fa-solid fa-server text-cyber-blue mr-1"></i> OKX API: <strong id="footer-api-status" class="text-cyber-green">CONNECTED</strong></span>
             <span><i class="fa-solid fa-shield-halved text-cyber-green mr-1"></i> READ-ONLY PRESENTATION MODE</span>
         </div>
         <div>
@@ -336,30 +324,44 @@
         </div>
     </footer>
 
+    <!-- TRADINGVIEW SCRIPT -->
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
     <!-- JAVASCRIPT ENGINE -->
     <script>
         // =========================================================================
-        // 🔑 DÁN TỰ ĐỘNG THÔNG TIN API CỦA BẠN VÀO BÊN DƯỚI NÀY:
+        // 🔑 OKX API CREDENTIALS
         // =========================================================================
         const OKX_API_KEY    = "cd35c786-049e-4b70-85ef-74e9b2239b28";
         const OKX_SECRET_KEY = "897058A26F3CBB9E888E8DBC9693260E";
         const OKX_PASSPHRASE = "Zxcv@1234";
         // =========================================================================
 
-        const BASE_CAPITAL = 10.0; // Vốn ban đầu 10$
-        let candles = [];
-        let currentPrice = 0.018450;
-        let activeFilter = '1D';
+        const BASE_CAPITAL = 10.0;
+        let currentPrice = 0.00000000;
+        let accountBalance = 0.00;
+        let activePositions = []; // Support multiple positions (Long/Short)
+        let tradeLogs = [];
 
-        let tradeLogs = [
-            { time: '14:22:10', type: 'BUY', price: 0.018380, profit: 0.45 },
-            { time: '13:10:05', type: 'SELL', price: 0.018410, profit: 0.32 },
-            { time: '11:45:30', type: 'BUY', price: 0.018290, profit: -0.15 },
-            { time: '09:12:00', type: 'BUY', price: 0.018350, profit: 0.88 },
-            { time: '08:00:15', type: 'SELL', price: 0.018400, profit: 0.20 }
-        ];
+        // 1. EMBED OKX TRADINGVIEW REALTIME CHART
+        function initTradingViewChart() {
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": "OKX:SHIBUSDT.P",
+                "interval": "1",
+                "timezone": "Etc/UTC",
+                "theme": "dark",
+                "style": "1",
+                "locale": "en",
+                "toolbar_bg": "#0a0f24",
+                "enable_publishing": false,
+                "hide_top_toolbar": false,
+                "save_image": false,
+                "container_id": "tradingview_chart"
+            });
+        }
 
-        // 1. SYSTEM CLOCK
+        // 2. SYSTEM CLOCK
         function updateClock() {
             const now = new Date();
             document.getElementById('clock-utc').innerText = now.toISOString().substr(11, 8) + ' UTC';
@@ -367,69 +369,42 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        // 2. OKX PUBLIC WEBSOCKET (REALTIME SHIB-USDT-SWAP CANDLES)
-        function initOKXWebSocket() {
-            const ws = new WebSocket('wss://ws.okx.com:8443/ws/v5/public');
-
-            ws.onopen = () => {
-                document.getElementById('ws-status').innerText = 'CONNECTED';
-                document.getElementById('ws-status').className = 'text-cyber-green font-bold';
-                
-                const subMsg = {
-                    "op": "subscribe",
-                    "args": [{ "channel": "candle1m", "instId": "SHIB-USDT-SWAP" }]
-                };
-                ws.send(JSON.stringify(subMsg));
-            };
-
-            ws.onmessage = (event) => {
-                const response = JSON.parse(event.data);
-                if (response.data && response.data.length > 0) {
-                    const c = response.data[0];
-                    const candleData = {
-                        time: parseInt(c[0]),
-                        open: parseFloat(c[1]),
-                        high: parseFloat(c[2]),
-                        low: parseFloat(c[3]),
-                        close: parseFloat(c[4]),
-                        marker: null
-                    };
-
-                    currentPrice = candleData.close;
-                    document.getElementById('current-price').innerText = currentPrice.toFixed(6);
-                    document.getElementById('open-px').innerText = candleData.open.toFixed(6);
-                    document.getElementById('high-px').innerText = candleData.high.toFixed(6);
-                    document.getElementById('low-px').innerText = candleData.low.toFixed(6);
-                    document.getElementById('close-px').innerText = candleData.close.toFixed(6);
-
-                    if (candles.length > 0 && candles[candles.length - 1].time === candleData.time) {
-                        // Preserve existing marker if updated
-                        candleData.marker = candles[candles.length - 1].marker;
-                        candles[candles.length - 1] = candleData;
-                    } else {
-                        candles.push(candleData);
-                        if (candles.length > 40) candles.shift();
+        // 3. OKX PUBLIC REST API FOR SHIB TICKER
+        async function fetchSHIBPrice() {
+            try {
+                const res = await fetch('https://www.okx.com/api/v5/market/ticker?instId=SHIB-USDT-SWAP');
+                const data = await res.json();
+                if (data.code === '0' && data.data && data.data.length > 0) {
+                    currentPrice = parseFloat(data.data[0].last);
+                    document.getElementById('current-price').innerText = currentPrice.toFixed(8);
+                    
+                    if (activePositions.length > 0) {
+                        renderPositionsTable();
                     }
-
-                    drawChart();
                 }
-            };
+            } catch (err) {
+                console.error("Error fetching price:", err);
+            }
+        }
 
-            ws.onerror = () => {
-                document.getElementById('ws-status').innerText = 'ERROR';
-                document.getElementById('ws-status').className = 'text-cyber-red font-bold';
-            };
+        // 4. GENERATE OKX REST API HEADER SIGNATURE
+        function getOKXHeaders(method, requestPath, body = '') {
+            const timestamp = new Date().toISOString();
+            const message = timestamp + method + requestPath + body;
+            const sign = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(message, OKX_SECRET_KEY));
 
-            ws.onclose = () => {
-                document.getElementById('ws-status').innerText = 'DISCONNECTED';
-                document.getElementById('ws-status').className = 'text-cyber-red font-bold';
-                setTimeout(initOKXWebSocket, 3000);
+            return {
+                'OK-ACCESS-KEY': OKX_API_KEY,
+                'OK-ACCESS-SIGN': sign,
+                'OK-ACCESS-TIMESTAMP': timestamp,
+                'OK-ACCESS-PASSPHRASE': OKX_PASSPHRASE,
+                'Content-Type': 'application/json'
             };
         }
 
-        // 3. OKX PRIVATE WEBSOCKET (AUTHENTICATED USER ORDERS & POSITIONS)
-        function initOKXPrivateWS() {
-            const statusEl = document.getElementById('private-ws-status');
+        // 5. FETCH OKX PRIVATE DATA (BALANCE, POSITIONS, FILLED ORDERS)
+        async function fetchOKXPrivateData() {
+            const statusEl = document.getElementById('api-status');
             
             if (!OKX_API_KEY || OKX_API_KEY.includes("YOUR_API_KEY")) {
                 statusEl.innerText = 'NO API KEY';
@@ -437,159 +412,165 @@
                 return;
             }
 
-            statusEl.innerText = 'AUTHENTICATING...';
-            statusEl.className = 'text-cyber-blue font-bold';
+            try {
+                // A. Fetch Real Balance
+                const pathAcc = '/api/v5/account/balance?ccy=USDT';
+                const resAcc = await fetch('https://www.okx.com' + pathAcc, { headers: getOKXHeaders('GET', pathAcc) });
+                const dataAcc = await resAcc.json();
 
-            const wsPrivate = new WebSocket('wss://ws.okx.com:8443/ws/v5/private');
-
-            wsPrivate.onopen = () => {
-                const timestamp = (Date.now() / 1000).toString();
-                const message = timestamp + 'GET' + '/users/self/verify';
-                const sign = CryptoJS.enc.Base64.stringify(CryptoJS.HmacSHA256(message, OKX_SECRET_KEY));
-
-                const loginMsg = {
-                    "op": "login",
-                    "args": [{
-                        "apiKey": OKX_API_KEY,
-                        "passphrase": OKX_PASSPHRASE,
-                        "timestamp": timestamp,
-                        "sign": sign
-                    }]
-                };
-                wsPrivate.send(JSON.stringify(loginMsg));
-            };
-
-            wsPrivate.onmessage = (event) => {
-                const res = JSON.parse(event.data);
-
-                if (res.event === 'login') {
-                    if (res.code === '0') {
-                        statusEl.innerText = 'CONNECTED';
-                        statusEl.className = 'text-cyber-green font-bold';
-
-                        // Subscribe to order channel
-                        const subMsg = {
-                            "op": "subscribe",
-                            "args": [{ "channel": "orders", "instType": "SWAP", "instId": "SHIB-USDT-SWAP" }]
-                        };
-                        wsPrivate.send(JSON.stringify(subMsg));
-                    } else {
-                        statusEl.innerText = 'AUTH FAILED';
-                        statusEl.className = 'text-cyber-red font-bold';
+                if (dataAcc.code === '0' && dataAcc.data && dataAcc.data.length > 0) {
+                    statusEl.innerText = 'ONLINE';
+                    statusEl.className = 'text-cyber-green font-bold';
+                    
+                    const details = dataAcc.data[0].details;
+                    if (details && details.length > 0) {
+                        accountBalance = parseFloat(details[0].eq || details[0].cashBal);
+                        document.getElementById('current-balance').innerText = '$' + accountBalance.toFixed(2);
                     }
+                } else {
+                    statusEl.innerText = 'AUTH ERROR';
+                    statusEl.className = 'text-cyber-red font-bold';
+                    return;
                 }
 
-                // Handle incoming orders execution event
-                if (res.data && res.data.length > 0) {
-                    const order = res.data[0];
-                    if (order.state === 'filled') {
-                        const side = order.side.toUpperCase();
-                        const execPrice = parseFloat(order.fillPx || order.avgPx);
-                        
-                        // Push into Recent Trade Logs
-                        const now = new Date();
-                        const timeStr = now.toTimeString().split(' ')[0];
-                        tradeLogs.unshift({
-                            time: timeStr,
-                            type: side,
-                            price: execPrice,
-                            profit: parseFloat(order.pnl || 0.0)
-                        });
-                        if (tradeLogs.length > 10) tradeLogs.pop();
+                // B. Fetch Real Open Positions (Long & Short)
+                const pathPos = '/api/v5/account/positions?instType=SWAP&instId=SHIB-USDT-SWAP';
+                const resPos = await fetch('https://www.okx.com' + pathPos, { headers: getOKXHeaders('GET', pathPos) });
+                const dataPos = await resPos.json();
 
-                        // Mark candle chart
-                        if (candles.length > 0) {
-                            candles[candles.length - 1].marker = side;
-                            drawChart();
+                activePositions = [];
+                if (dataPos.code === '0' && dataPos.data && dataPos.data.length > 0) {
+                    dataPos.data.forEach(p => {
+                        const posSize = Math.abs(parseFloat(p.pos));
+                        if (posSize > 0) {
+                            activePositions.push({
+                                side: p.posSide ? p.posSide.toUpperCase() : (parseFloat(p.pos) > 0 ? 'LONG' : 'SHORT'),
+                                size: posSize,
+                                entryPrice: parseFloat(p.avgPx),
+                                markPx: parseFloat(p.markPx || currentPrice),
+                                margin: parseFloat(p.margin || (parseFloat(p.margin) === 0 ? (posSize * parseFloat(p.avgPx) / parseFloat(p.lever || 20)) : 0.0)),
+                                lever: p.lever || "20",
+                                upl: parseFloat(p.upl || 0.0)
+                            });
                         }
-
-                        calculateMetrics();
-                    }
+                    });
                 }
-            };
+                renderPositionsTable();
+                updateChartMarkers();
 
-            wsPrivate.onerror = () => {
-                statusEl.innerText = 'CONN ERROR';
+                // C. Fetch Real Filled Orders History
+                const pathOrders = '/api/v5/trade/orders-history-archive?instType=SWAP&instId=SHIB-USDT-SWAP&state=filled';
+                const resOrders = await fetch('https://www.okx.com' + pathOrders, { headers: getOKXHeaders('GET', pathOrders) });
+                const dataOrders = await resOrders.json();
+
+                if (dataOrders.code === '0' && dataOrders.data && dataOrders.data.length > 0) {
+                    tradeLogs = dataOrders.data.slice(0, 15).map(o => {
+                        const now = new Date(parseInt(o.fillTime || o.uTime));
+                        const sideText = o.posSide ? `${o.posSide.toUpperCase()} (${o.side.toUpperCase()})` : o.side.toUpperCase();
+                        return {
+                            time: now.toTimeString().split(' ')[0],
+                            side: sideText,
+                            size: parseFloat(o.fillSz || o.sz),
+                            price: parseFloat(o.fillPx || o.avgPx),
+                            leverage: (o.lever || '20') + 'x',
+                            profit: parseFloat(o.pnl || 0.0)
+                        };
+                    });
+                    calculateMetrics();
+                    updateChartMarkers();
+                }
+
+            } catch (err) {
+                console.error("OKX Private API Error:", err);
+                statusEl.innerText = 'CORS/API ERR';
                 statusEl.className = 'text-cyber-red font-bold';
-            };
-        }
-
-        // 4. GENERATE INITIAL DUMMY CANDLES FOR CHART RENDER
-        function generateInitialCandles() {
-            let basePx = 0.018400;
-            let now = Date.now() - 40 * 60 * 1000;
-            for (let i = 0; i < 35; i++) {
-                let open = basePx + (Math.random() - 0.48) * 0.0001;
-                let close = open + (Math.random() - 0.48) * 0.0001;
-                let high = Math.max(open, close) + Math.random() * 0.00005;
-                let low = Math.min(open, close) - Math.random() * 0.00005;
-                
-                let marker = null;
-                if (i === 15) marker = 'BUY';
-                if (i === 28) marker = 'SELL';
-
-                candles.push({ time: now + i * 60000, open, high, low, close, marker });
-                basePx = close;
             }
         }
 
-        // 5. CUSTOM CANVAS CANDLESTICK RENDERER
-        function drawChart() {
-            const canvas = document.getElementById('candleChart');
-            const parent = document.getElementById('chart-parent');
-            if (!canvas || !parent) return;
+        // 6. RENDER OPEN POSITIONS TABLE (SUPPORT LONG & SHORT)
+        function renderPositionsTable() {
+            const tableBody = document.getElementById('position-table-body');
+            const statusBadge = document.getElementById('pos-status-badge');
 
-            canvas.width = parent.clientWidth;
-            canvas.height = parent.clientHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (activePositions.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-gray-500">Không có vị thế SHIB-USDT-SWAP đang mở</td></tr>`;
+                statusBadge.className = "text-[10px] bg-cyber-card text-gray-400 px-1.5 py-0.5 border border-cyber-border";
+                statusBadge.innerText = "NO POSITION";
+                return;
+            }
 
-            if (candles.length === 0) return;
+            statusBadge.className = "text-[10px] bg-cyber-blue/20 text-cyber-blue px-1.5 py-0.5 border border-cyber-blue/40";
+            statusBadge.innerText = `${activePositions.length} ACTIVE POS`;
 
-            let minPrice = Math.min(...candles.map(c => c.low));
-            let maxPrice = Math.max(...candles.map(c => c.high));
-            let padding = (maxPrice - minPrice) * 0.1 || 0.0001;
-            minPrice -= padding;
-            maxPrice += padding;
-
-            const candleWidth = Math.max(2, (canvas.width / candles.length) - 4);
-
-            candles.forEach((c, i) => {
-                const x = i * (canvas.width / candles.length) + candleWidth / 2;
-                const openY = canvas.height - ((c.open - minPrice) / (maxPrice - minPrice)) * canvas.height;
-                const closeY = canvas.height - ((c.close - minPrice) / (maxPrice - minPrice)) * canvas.height;
-                const highY = canvas.height - ((c.high - minPrice) / (maxPrice - minPrice)) * canvas.height;
-                const lowY = canvas.height - ((c.low - minPrice) / (maxPrice - minPrice)) * canvas.height;
-
-                const isGreen = c.close >= c.open;
-                const color = isGreen ? '#00ffcc' : '#ff0055';
-
-                ctx.strokeStyle = color;
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                ctx.moveTo(x, highY);
-                ctx.lineTo(x, lowY);
-                ctx.stroke();
-
-                ctx.fillStyle = color;
-                const bodyY = Math.min(openY, closeY);
-                const bodyHeight = Math.max(2, Math.abs(closeY - openY));
-                ctx.fillRect(x - candleWidth / 2, bodyY, candleWidth, bodyHeight);
-
-                if (c.marker) {
-                    ctx.font = 'bold 10px JetBrains Mono';
-                    if (c.marker === 'BUY') {
-                        ctx.fillStyle = '#00ffcc';
-                        ctx.fillText('▲ BUY', x - 12, lowY + 14);
-                    } else if (c.marker === 'SELL') {
-                        ctx.fillStyle = '#ff0055';
-                        ctx.fillText('▼ SELL', x - 14, highY - 6);
-                    }
+            tableBody.innerHTML = activePositions.map(pos => {
+                const isLong = pos.side === 'LONG';
+                const sideClass = isLong ? 'text-cyber-green font-bold' : 'text-cyber-red font-bold';
+                const markPrice = pos.markPx || currentPrice;
+                
+                let upl = pos.upl;
+                if (upl === 0 && markPrice > 0) {
+                    upl = isLong 
+                        ? (markPrice - pos.entryPrice) * pos.size 
+                        : (pos.entryPrice - markPrice) * pos.size;
                 }
-            });
+
+                const pnlClass = upl >= 0 ? 'text-cyber-green glow-text-green' : 'text-cyber-red glow-text-red';
+
+                return `
+                    <tr class="border-b border-cyber-border/30 text-[11px]">
+                        <td class="${sideClass}">${pos.side}</td>
+                        <td class="text-cyber-yellow font-bold">${pos.lever}x</td>
+                        <td>${pos.size} CT</td>
+                        <td>${pos.entryPrice.toFixed(8)}</td>
+                        <td>${markPrice.toFixed(8)}</td>
+                        <td>$${pos.margin.toFixed(2)}</td>
+                        <td class="font-bold ${pnlClass}">${upl >= 0 ? '+' : ''}$${upl.toFixed(2)}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
-        // 6. CALCULATE & UPDATE METRICS
+        // 7. UPDATE CHART EXECUTION MARKERS & HUD OVERLAY
+        function updateChartMarkers() {
+            const overlayContainer = document.getElementById('overlay-entries-list');
+            if (!overlayContainer) return;
+
+            let overlayHTML = '';
+
+            // Display Active Position Entry Levels on HUD
+            activePositions.forEach(pos => {
+                const isLong = pos.side === 'LONG';
+                const colorClass = isLong ? 'text-cyber-green' : 'text-cyber-red';
+                const icon = isLong ? '▲ BUY (LONG)' : '▼ SELL (SHORT)';
+                overlayHTML += `
+                    <div class="flex justify-between space-x-4 ${colorClass}">
+                        <span>${icon} @ Active</span>
+                        <span class="font-bold">${pos.entryPrice.toFixed(8)}</span>
+                    </div>
+                `;
+            });
+
+            // If no active positions, show last execution level from logs
+            if (activePositions.length === 0 && tradeLogs.length > 0) {
+                const lastTrade = tradeLogs[0];
+                const isLong = lastTrade.side.includes('LONG') || lastTrade.side.includes('BUY');
+                const colorClass = isLong ? 'text-cyber-green' : 'text-cyber-red';
+                overlayHTML += `
+                    <div class="flex justify-between space-x-4 ${colorClass}">
+                        <span>${isLong ? '▲ Last BUY' : '▼ Last SELL'}</span>
+                        <span class="font-bold">${lastTrade.price.toFixed(8)}</span>
+                    </div>
+                `;
+            }
+
+            if (overlayHTML === '') {
+                overlayHTML = `<div class="text-gray-500">No active markers</div>`;
+            }
+
+            overlayContainer.innerHTML = overlayHTML;
+        }
+
+        // 8. CALCULATE ACCUMULATED METRICS
         function calculateMetrics() {
             let totalProfit = tradeLogs.reduce((acc, cur) => acc + cur.profit, 0);
             let roi = (totalProfit / BASE_CAPITAL) * 100;
@@ -606,42 +587,35 @@
             document.getElementById('stat-net-profit').innerText = (totalProfit >= 0 ? '+' : '') + '$' + totalProfit.toFixed(2) + ' USD';
             document.getElementById('stat-winrate').innerText = winRate.toFixed(1) + '%';
             document.getElementById('stat-pf').innerText = profitFactor;
-            document.getElementById('stat-sharpe').innerText = '2.14';
-            document.getElementById('stat-mdd').innerText = '-3.20%';
             document.getElementById('stat-trades').innerText = tradeLogs.length;
             document.getElementById('stat-win-loss').innerText = `${wins.length} / ${losses.length}`;
 
             const historyBody = document.getElementById('trade-history-body');
+            if (tradeLogs.length === 0) {
+                historyBody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-500">Chưa có lịch sử khớp lệnh</td></tr>`;
+                return;
+            }
+
             historyBody.innerHTML = tradeLogs.map(t => `
                 <tr class="border-b border-cyber-border/20">
                     <td>${t.time}</td>
-                    <td class="${t.type === 'BUY' ? 'text-cyber-green' : 'text-cyber-red'} font-bold">${t.type}</td>
-                    <td>${t.price.toFixed(6)}</td>
+                    <td class="font-bold ${t.side.includes('LONG') || t.side.includes('BUY') ? 'text-cyber-green' : 'text-cyber-red'}">${t.side}</td>
+                    <td>${t.size}</td>
+                    <td>${t.price.toFixed(8)}</td>
+                    <td>${t.leverage}</td>
                     <td class="${t.profit >= 0 ? 'text-cyber-green' : 'text-cyber-red'} font-bold">${t.profit >= 0 ? '+' : ''}$${t.profit.toFixed(2)}</td>
                 </tr>
             `).join('');
         }
 
-        function setFilter(tf) {
-            activeFilter = tf;
-            ['1D', '1W', '1M', '1Y'].forEach(id => {
-                const btn = document.getElementById(`btn-${id}`);
-                if (id === tf) {
-                    btn.className = "px-1.5 py-0.5 bg-cyber-blue text-black font-bold rounded";
-                } else {
-                    btn.className = "px-1.5 py-0.5 bg-cyber-card border border-cyber-border text-gray-400 rounded";
-                }
-            });
-            calculateMetrics();
-        }
-
-        window.addEventListener('resize', drawChart);
         window.onload = () => {
-            generateInitialCandles();
-            initOKXWebSocket();
-            initOKXPrivateWS();
-            calculateMetrics();
-            drawChart();
+            initTradingViewChart();
+            fetchSHIBPrice();
+            fetchOKXPrivateData();
+
+            // Refresh data continuously
+            setInterval(fetchSHIBPrice, 2000);
+            setInterval(fetchOKXPrivateData, 3000);
         };
     </script>
 </body>
